@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Yelp raw data
+data/raw/*.json
+data/raw/*.tar
+data/raw/*.gz
+
+# Processed datasets
+data/processed/*.csv
+data/processed/*.parquet
+
+# Saved models
+models/*.pkl
+models/*.joblib
+models/*.pt
