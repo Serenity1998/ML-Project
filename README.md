@@ -136,11 +136,11 @@ Train/test split by user (same user never in both).
 
 | Phase | Weeks | Deliverable | Status |
 |-------|-------|-------------|--------|
-| 1. Data Prep & Baselines | 1-6 | Sampling, filtering, evaluation harness, popularity + cosine-sim baselines | 🚀 **In Progress** |
-| 2. Weather Features | 7-8 | Open-Meteo integration, monthly climate features | Planned |
-| 3. Review Embeddings | 9 | Sentence-BERT embeddings, caching | Planned |
-| 4. ML Models | 10 | Random Forest + Two-Tower training | Planned |
-| 5. Ablation Experiments | 11 | Feature combinations, model comparison | Planned |
+| 1. Data Prep & Baselines | 1-6 | Sampling, filtering, evaluation harness, popularity + cosine-sim baselines | 🔥💯✔️ **Done** |
+| 2. Weather Features | 7-8 | Open-Meteo integration, monthly climate features | 🔥💯✔️ **Done** |
+| 3. Review Embeddings | 9 | Sentence-BERT embeddings, caching | 🚀 **In Progress** |
+| 4. ML Models | 10 | Random Forest + Two-Tower training | 🚀 **In Progress** |
+| 5. Ablation Experiments | 11 | Feature combinations, model comparison | 🚀 **In Progress** |
 | 6. Analysis & Presentation | 12 | Visualizations, feature importance, error analysis | Planned |
 
 ## Starting Phase 1
