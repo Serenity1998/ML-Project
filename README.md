@@ -143,6 +143,51 @@ Train/test split by user (same user never in both).
 | 5. Ablation Experiments | 11 | Feature combinations, model comparison | 🚀 **In Progress** |
 | 6. Analysis & Presentation | 12 | Visualizations, feature importance, error analysis | Planned |
 
+## Roadmap (planning stage)
+
+Phase 1 baseline to beat: **Popularity Recall@10 = 0.358** (see PR #1). Pick a track, put your name in Owner, and go.
+
+**Decide first:** merge PR #1 · what counts as a destination (dedupe ~270 cities vs. ~11 metro areas) · fix the cosine baseline's 3rd feature · trip month for weather.
+
+| # | Milestone | Size | Needs | Done when |
+|---|-----------|------|-------|-----------|
+| M1 | Destination cleanup | S | PR #1 | Cities deduped/grouped, notebooks 01–06 re-run |
+| M2 | Feature matrix | M | M1 | Numeric user (history only) + city features, one row per `train_labels` pair |
+| M3 | Weather features | M | M1 | Monthly temp + rainfall per city, joined on (city, trip month) |
+| M4 | Review embeddings | M | M1 | Cached Sentence-BERT vectors per user (history) and city |
+| M5 | Random Forest | M | M2 | Recall@10 / NDCG / MRR on the PR #1 test pairs |
+| M6 | Two-Tower network | L | M2 | Same metrics, same test pairs |
+| M7 | Ablation study | M | M3–M6 | 4 feature configs × 2 models table |
+| M8 | Analysis & slides | M | M7 | Feature importance, error analysis, final deck |
+
+S = 1–2 days · M = 3–5 days · L = 1 week+
+
+| Track | Milestones | Owner |
+|-------|------------|-------|
+| A | M1 Cleanup → M3 Weather | TBD |
+| B | M2 Features → M5 Random Forest | TBD |
+| C | M4 Embeddings → lead M7 Ablation | TBD |
+| D | M6 Two-Tower → lead M8 Slides | TBD |
+
+### Critical path
+
+M2 gates both models; weather and embeddings only need to be ready by the ablation.
+
+```mermaid
+flowchart LR
+  M1[M1 Cleanup] --> M2[M2 Features]
+  M1 --> M3[M3 Weather]
+  M1 --> M4[M4 Embeddings]
+  M2 --> M5[M5 Random Forest]
+  M2 --> M6[M6 Two-Tower]
+  M3 --> M7[M7 Ablation]
+  M4 --> M7
+  M5 --> M7
+  M6 --> M7
+  M7 --> M8[M8 Analysis]
+  style M2 stroke-width:3px
+```
+
 ## Starting Phase 1
 
 Run notebooks in order:
