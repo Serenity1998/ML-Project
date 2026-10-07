@@ -32,6 +32,7 @@ RANDOM_STATE = 42
 # Data sampling for Phase 1 (work with smaller subset)
 PHASE1_SAMPLE_FRACTION = 0.1  # 10% sample for development
 PHASE1_SAMPLE_SEED = 42
+PHASE1_USER_SAMPLE_FRACTION = 0.1  # Fraction of users kept, with all their reviews
 
 # Destination filtering for Phase 1
 PHASE1_MIN_BUSINESSES_PER_CITY = 50
@@ -44,6 +45,7 @@ PHASE1_MIN_USER_CITIES = 2  # Cross-city requirement
 # Evaluation for Phase 1
 PHASE1_TEST_SIZE = 0.2
 PHASE1_EVAL_K = 10  # Compute Recall@10, NDCG@10, MRR@10
+PHASE1_NEGATIVES_PER_POSITIVE = 4  # Unvisited cities sampled per held-out city
 
 # ============================================================================
 # PHASE 2: Weather Features (Weeks 7-8)
