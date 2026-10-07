@@ -39,10 +39,25 @@ class CosineSimilarityBaseline:
         self.businesses = businesses_df
         self.reviews = reviews_df
 
+        # Fit one scaler across all cities so users and cities share the same scale
+        self.city_vectors = {}
+        for city in businesses_df['city'].unique():
+            city_vec = self.build_city_vector(city)
+            self.city_vectors[city] = self._to_array(city_vec)
+        self.scaler = StandardScaler().fit(np.vstack(list(self.city_vectors.values())))
+
+    def _to_array(self, features):
+        """Feature dict -> 1-row array in a fixed order."""
+        return np.array([
+            features['avg_rating'],
+            features['avg_review_count'],
+            np.log1p(features['num_reviews'])
+        ]).reshape(1, -1)
+
     def build_user_vector(self, user_id):
         """Build feature vector for user from their reviews."""
         user_reviews = self.reviews[self.reviews['user_id'] == user_id]
-        merged = user_reviews.merge(
+        merged = user_reviews[['business_id']].merge(
             self.businesses[['business_id', 'stars', 'review_count']],
             on='business_id'
         )
@@ -78,34 +93,16 @@ class CosineSimilarityBaseline:
         if user_vec is None:
             return []
 
+        user_features_norm = self.scaler.transform(self._to_array(user_vec))
+
         scores = {}
         for city in candidate_cities:
-            city_vec = self.build_city_vector(city)
-            if city_vec is None:
+            if city not in self.city_vectors:
                 scores[city] = 0.0
                 continue
 
-            # Create feature vectors in same order
-            user_features = np.array([
-                user_vec['avg_rating'],
-                user_vec['avg_review_count'],
-                np.log1p(user_vec['num_reviews'])
-            ]).reshape(1, -1)
-
-            city_features = np.array([
-                city_vec['avg_rating'],
-                city_vec['avg_review_count'],
-                np.log1p(city_vec['num_reviews'])
-            ]).reshape(1, -1)
-
-            # Normalize
-            scaler = StandardScaler()
-            user_features_norm = scaler.fit_transform(user_features)
-            city_features_norm = scaler.fit_transform(city_features)
-
-            # Cosine similarity
-            sim = cosine_similarity(user_features_norm, city_features_norm)[0, 0]
-            scores[city] = sim
+            city_features_norm = self.scaler.transform(self.city_vectors[city])
+            scores[city] = cosine_similarity(user_features_norm, city_features_norm)[0, 0]
 
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [city for city, _ in ranked[:k]]
