@@ -37,3 +37,10 @@ data/samples/
 # Generated reports (regeneratable)
 reports/*.txt
 reports/*.csv
+
+# Frontend dependencies
+frontend/node_modules/
+frontend/dist/
+
+# Backend database
+backend/app.db
