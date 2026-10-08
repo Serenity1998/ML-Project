@@ -1,0 +1,525 @@
+INFO:     Started server process [25936]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 2995.12it/s]
+INFO:     127.0.0.1:64895 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64917 - "POST /chat HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py", line 1216, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\telemetry\_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 360, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\OneDrive\Desktop\[Tume] ML course\ML Project\backend\main.py", line 110, in chat
+    return ChatResponse(
+        session_id=req.session_id,
+        agent_reply=agent_reply,
+        preferences_extracted=extracted_prefs
+    )
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ChatResponse
+preferences_extracted
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/dict_type
+INFO:     127.0.0.1:64919 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64921 - "POST /chat HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py", line 1216, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\telemetry\_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 360, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\OneDrive\Desktop\[Tume] ML course\ML Project\backend\main.py", line 110, in chat
+    return ChatResponse(
+        session_id=req.session_id,
+        agent_reply=agent_reply,
+        preferences_extracted=extracted_prefs
+    )
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ChatResponse
+preferences_extracted
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/dict_type
+INFO:     127.0.0.1:64923 - "POST /chat HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py", line 1216, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\telemetry\_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py", line 360, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marlene\OneDrive\Desktop\[Tume] ML course\ML Project\backend\main.py", line 110, in chat
+    return ChatResponse(
+        session_id=req.session_id,
+        agent_reply=agent_reply,
+        preferences_extracted=extracted_prefs
+    )
+  File "C:\Users\Marlene\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ChatResponse
+preferences_extracted
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/dict_type
+INFO:     127.0.0.1:56081 - "GET /health HTTP/1.1" 200 OK
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 4027.53it/s]
+INFO:     127.0.0.1:56083 - "POST /recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55871 - "POST /feedback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55873 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54353 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54353 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54353 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52829 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52829 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52829 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52829 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52829 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54515 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54515 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54515 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54547 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54547 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56106 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56106 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56106 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56106 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55959 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55320 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65007 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56080 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56080 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56080 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56080 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62318 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62318 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62318 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62318 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62318 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57603 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57603 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57603 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57603 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59226 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59226 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52864 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52864 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52864 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63156 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58420 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58420 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58420 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58420 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58420 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57125 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57125 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52368 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60367 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60367 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62851 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62851 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62851 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59412 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59412 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59289 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59289 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57345 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57345 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57345 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58091 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58091 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58091 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58091 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50920 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50920 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62553 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62553 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62553 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62553 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61987 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61987 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51098 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51098 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51098 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51098 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62432 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62432 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62432 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51919 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51919 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51919 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51919 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52807 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52807 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52807 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52807 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55462 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58507 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58507 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58507 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61523 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61523 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59723 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59723 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59723 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58517 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56322 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56322 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56322 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55861 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55687 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55687 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55687 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55687 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55687 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61297 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61297 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51942 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51942 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62621 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50838 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50838 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50838 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50838 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51034 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51034 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51034 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51034 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51034 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55315 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55315 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55315 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55315 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52472 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61151 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61151 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61151 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61151 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49640 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49640 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49640 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57639 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52257 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52426 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52426 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52426 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52426 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54199 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54199 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54199 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62324 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58561 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58561 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62024 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62024 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62024 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57059 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57059 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57059 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60778 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60778 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60778 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60778 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56513 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52333 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52333 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52333 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60386 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60386 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61069 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61069 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61069 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61069 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52925 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52925 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54574 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54574 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53530 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53530 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55966 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53530 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61587 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61587 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61587 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53627 - "GET /metrics HTTP/1.1" 200 OK

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import PreferenceForm from './components/PreferenceForm'
 import ChatPanel from './components/ChatPanel'
 import PreferenceSummary from './components/PreferenceSummary'
 import RecommendationCard from './components/RecommendationCard'
@@ -63,11 +64,16 @@ function App() {
     try {
       const response = await getRecommendations(sessionId, prefs)
       setRecommendations(response.recommendations)
+      setPreferences(prefs)
     } catch (error) {
       console.error('Recommendation error:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFormSubmit = async (formPrefs) => {
+    await handleGenerateRecommendations(formPrefs)
   }
 
   return (
@@ -78,42 +84,45 @@ function App() {
         {apiHealth === false && <div className="warning">⚠️ Backend API not available</div>}
       </header>
 
-      <div className="container">
-        <div className="left-panel">
-          <ChatPanel
-            messages={messages}
-            onMessage={handleMessage}
-            loading={loading}
-          />
-        </div>
+      <div className="main-content">
+        {/* Form Section */}
+        <PreferenceForm onSubmit={handleFormSubmit} loading={loading} />
 
-        <div className="right-panel">
-          {preferences && (
-            <>
-              <PreferenceSummary preferences={preferences} />
+        {/* Recommendations Section */}
+        {recommendations && (
+          <div className="recommendations-section">
+            <h2>🏙️ Top Recommendations</h2>
+            <div className="recommendations-grid">
+              {recommendations.map((rec, idx) => (
+                <RecommendationCard
+                  key={idx}
+                  recommendation={rec}
+                  sessionId={sessionId}
+                  onFeedback={() => {
+                    getMetrics().then(setMetrics)
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-              {recommendations && (
-                <div className="recommendations-section">
-                  <h3>🏙️ Top Recommendations</h3>
-                  <div className="recommendations-list">
-                    {recommendations.map((rec, idx) => (
-                      <RecommendationCard
-                        key={idx}
-                        recommendation={rec}
-                        sessionId={sessionId}
-                        onFeedback={() => {
-                          // Refresh metrics after feedback
-                          getMetrics().then(setMetrics)
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+        {/* Chat & Metrics Section */}
+        <div className="bottom-container">
+          <div className="chat-section">
+            <h2>💬 Chat with Agent (Optional)</h2>
+            <ChatPanel
+              messages={messages}
+              onMessage={handleMessage}
+              loading={loading}
+            />
+          </div>
+
+          {metrics && (
+            <div className="metrics-section">
+              <MetricsPanel metrics={metrics} />
+            </div>
           )}
-
-          {metrics && <MetricsPanel metrics={metrics} />}
         </div>
       </div>
     </div>
