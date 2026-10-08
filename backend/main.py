@@ -3,11 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uuid
 import numpy as np
+import sys
+from pathlib import Path
 
-from db import init_db, save_session, get_session, log_feedback, get_metrics
-from agent import chat_with_agent, explain_recommendations
-from scorer import score_cities
-from bandit import get_or_create_bandit
+# Add project root to path so pickled models can find src.models
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(Path(__file__).parent))
+
+from backend.db import init_db, save_session, get_session, log_feedback, get_metrics
+from backend.agent import chat_with_agent, explain_recommendations
+from backend.scorer import score_cities
+from backend.bandit import get_or_create_bandit
 
 # Initialize FastAPI app
 app = FastAPI(title="Travel Recommender API")

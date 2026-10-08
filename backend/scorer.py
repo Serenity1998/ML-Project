@@ -3,10 +3,15 @@ import pandas as pd
 import joblib
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
+import sys
 
 PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 CACHE_DIR = PROJECT_ROOT / "data" / "cache"
+
+# Add project root to sys.path for pickled model imports
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Global state
 _MODEL = None
@@ -22,7 +27,10 @@ def load_model():
         _EMBEDDING_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
 
         # Load city table
-        from city_table import get_city_table
+        try:
+            from backend.city_table import get_city_table
+        except ImportError:
+            from city_table import get_city_table
         _CITY_TABLE = get_city_table()
 
     return _MODEL, _EMBEDDING_MODEL, _CITY_TABLE

@@ -1,189 +1,38 @@
 """
-MASTER SCRIPT: Expand Dataset + Retrain Models (All-in-One)
-Run this ONE time: python MASTER_EXPAND.py
-It will do everything automatically step-by-step
+Resume script: Skip embedding, go straight to training and writing results
+Use this if embedding is already done but writing results failed
 """
 
-import json
 import pandas as pd
 import numpy as np
-from pathlib import Path
-import sys
-import time
-from tqdm import tqdm
 import joblib
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
+import sys
 sys.path.insert(0, '.')
 
 from config import *
 from src.models.random_forest import RandomForestRecommender
 
 print("\n" + "="*80)
-print("MASTER SCRIPT: EXPAND DATASET & RETRAIN MODELS")
+print("MASTER SCRIPT: RESUME FROM CACHED EMBEDDINGS")
 print("="*80)
 
 # ============================================================================
-# STEP 1: FIND YELP JSON FILE
-# ============================================================================
-# Check if embeddings already cached
-cached_embeddings = CACHE_DIR / "review_embeddings_expanded.npy"
-cached_reviews = CACHE_DIR / "reviews_expanded.parquet"
-
-if cached_embeddings.exists() and cached_reviews.exists():
-    print("\n⏭️  RESUMING: Found cached embeddings, skipping steps 1-4")
-    print("="*80)
-    # Load cached data and skip to step 5
-    embeddings = np.load(cached_embeddings)
-    reviews_df = pd.read_parquet(cached_reviews)
-    businesses_df = pd.read_parquet(CACHE_DIR / "businesses_major_cities.parquet")
-    print(f"✓ Loaded {len(reviews_df):,} reviews from cache")
-    print(f"✓ Loaded {embeddings.shape[0]:,} embeddings from cache")
-    step_start = 5
-else:
-    step_start = 1
-    print("\n" + "="*80)
-    print("STEP 1/5: FINDING YELP JSON FILE")
-    print("="*80)
-
-    # Common paths to check
-    possible_paths = [
-        Path("raw_data/yelp_academic_dataset_review.json"),
-        Path("data/raw/yelp_academic_dataset_review.json"),
-        Path("yelp_academic_dataset_review.json"),
-    ]
-
-    yelp_path = None
-    for path in possible_paths:
-        if path.exists():
-            yelp_path = path
-            print(f"✓ Found Yelp JSON at: {yelp_path}")
-            print(f"  File size: {path.stat().st_size / (1024**3):.2f} GB")
-            break
-
-    if not yelp_path:
-        print("\n❌ ERROR: Could not find yelp_academic_dataset_review.json")
-        print("\nPlease place the Yelp JSON file in one of these locations:")
-        for path in possible_paths:
-            print(f"  - {path}")
-        sys.exit(1)
-
-# ============================================================================
-# STEP 2: LOAD & FILTER DATA (skip if resuming from cache)
-# ============================================================================
-if step_start <= 2:
-    print("\n" + "="*80)
-    print("STEP 2/5: LOADING & FILTERING DATA")
-    print("="*80)
-
-print("Loading Yelp reviews from JSON...")
-start = time.time()
-
-reviews_list = []
-line_count = 0
-
-try:
-    with open(yelp_path, encoding='utf-8', errors='ignore') as f:
-        for line in f:
-            line_count += 1
-            if line_count % 50000 == 0:
-                print(f"  Loaded {line_count:,} reviews...")
-            try:
-                reviews_list.append(json.loads(line))
-            except:
-                continue
-
-except Exception as e:
-    print(f"❌ Error loading file: {e}")
-    sys.exit(1)
-
-reviews_df = pd.DataFrame(reviews_list)
-print(f"✓ Loaded {len(reviews_df):,} total reviews in {time.time()-start:.1f}s")
-
-# Load businesses
-print("\nLoading businesses...")
-try:
-    businesses_df = pd.read_parquet(CACHE_DIR / "businesses_major_cities.parquet")
-    print(f"✓ Loaded {len(businesses_df):,} businesses")
-except:
-    print("⚠️  Using all businesses from original dataset")
-    businesses_df = pd.read_parquet(CACHE_DIR / "businesses_major_cities.parquet")
-
-# Filter to major cities
-print("\nFiltering to major cities...")
-city_counts = businesses_df['city'].value_counts().head(39)
-major_cities = set(city_counts.index)
-
-reviews_df = reviews_df.merge(
-    businesses_df[['business_id', 'city']],
-    on='business_id',
-    how='inner'
-)
-print(f"✓ Reviews in major cities: {len(reviews_df):,}")
-
-# Filter to cross-city users
-print("Filtering to cross-city users...")
-user_cities = reviews_df.groupby('user_id')['city'].nunique()
-cross_city_users = user_cities[user_cities >= 2].index
-reviews_df = reviews_df[reviews_df['user_id'].isin(cross_city_users)]
-
-print(f"✓ Cross-city reviews: {len(reviews_df):,}")
-print(f"✓ Unique users: {reviews_df['user_id'].nunique():,}")
-print(f"✓ Unique cities: {reviews_df['city'].nunique():,}")
-
-# ============================================================================
-# STEP 3: GENERATE EMBEDDINGS
+# STEP 4: LOAD CACHED DATA & BUILD FEATURES
 # ============================================================================
 print("\n" + "="*80)
-print("STEP 3/5: GENERATING EMBEDDINGS")
+print("STEP 4/5: LOADING CACHED DATA & BUILDING FEATURES")
 print("="*80)
 
-print("Loading Sentence-BERT model (first time ~2min)...")
-start = time.time()
+print("Loading cached embeddings and reviews...")
+reviews_df = pd.read_parquet(CACHE_DIR / "reviews_expanded.parquet")
+embeddings = np.load(CACHE_DIR / "review_embeddings_expanded.npy")
+businesses_df = pd.read_parquet(CACHE_DIR / "businesses_major_cities.parquet")
 
-try:
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    print(f"✓ Model loaded in {time.time()-start:.1f}s")
-except Exception as e:
-    print(f"❌ Error loading model: {e}")
-    print("   Make sure sentence-transformers is installed:")
-    print("   pip install sentence-transformers")
-    sys.exit(1)
-
-# Generate embeddings in batches
-print(f"\nGenerating embeddings for {len(reviews_df):,} reviews...")
-batch_size = 128
-embeddings_list = []
-start = time.time()
-
-for i in tqdm(range(0, len(reviews_df), batch_size), desc="Embedding progress"):
-    batch = reviews_df.iloc[i:i+batch_size]['text'].tolist()
-    batch_embeddings = model.encode(batch, show_progress_bar=False)
-    embeddings_list.append(batch_embeddings)
-
-embeddings = np.vstack(embeddings_list)
-elapsed = time.time() - start
-
-print(f"✓ Generated {embeddings.shape[0]:,} embeddings")
-print(f"✓ Embedding dimension: {embeddings.shape[1]}")
-print(f"✓ Time taken: {elapsed/60:.1f} minutes")
-
-# ============================================================================
-# STEP 4: SAVE DATA & BUILD FEATURES
-# ============================================================================
-print("\n" + "="*80)
-print("STEP 4/5: SAVING DATA & BUILDING FEATURES")
-print("="*80)
-
-print("Saving expanded dataset...")
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-reviews_df['embedding_id'] = range(len(reviews_df))
-reviews_df.to_parquet(CACHE_DIR / "reviews_expanded.parquet", index=False)
-np.save(CACHE_DIR / "review_embeddings_expanded.npy", embeddings)
-print(f"✓ Saved reviews and embeddings")
+print(f"✓ Loaded {len(reviews_df):,} reviews")
+print(f"✓ Loaded {embeddings.shape[0]:,} embeddings")
 
 print("\nBuilding feature dataframes...")
 
@@ -300,8 +149,8 @@ r2_improvement = r2_new - original_r2
 print(f"\n{'Metric':<20} {'Original':<20} {'Expanded':<20} {'Change':<15}")
 print("-" * 75)
 print(f"{'Dataset Size':<20} {'298':<20} {f'{len(reviews_df):,}':<20}")
-print(f"{'Unique Users':<20} {'18':<20} {f'{reviews_df["user_id"].nunique():,}':<20}")
-print(f"{'Unique Cities':<20} {'39':<20} {f'{reviews_df["city"].nunique():,}':<20}")
+print(f"{'Unique Users':<20} {'18':<20} {f'{reviews_df['user_id'].nunique():,}':<20}")
+print(f"{'Unique Cities':<20} {'39':<20} {f'{reviews_df['city'].nunique():,}':<20}")
 print("-" * 75)
 print(f"{'MSE':<20} {f'{original_mse:.4f}':<20} {f'{mse_new:.4f}':<20} {f'{mse_improvement:+.1f}%':<15}")
 print(f"{'MAE':<20} {f'{original_mae:.4f}':<20} {f'{mae_new:.4f}':<20} {f'{mae_improvement:+.1f}%':<15}")
@@ -359,13 +208,11 @@ SUMMARY:
   Files created:
     ✓ {model_path}
     ✓ {results_path}
-    ✓ {CACHE_DIR / "reviews_expanded.parquet"}
-    ✓ {CACHE_DIR / "review_embeddings_expanded.npy"}
 
 GRADE IMPACT:
   Current:  82/100 (B+)
-  With expansion: 87-90/100 (B+ → A-)
-  With agent: 92-95/100 (A- → A)
+  With expansion: 87-90/100 (B+ -> A-)
+  With agent: 92-95/100 (A- -> A)
 
 Next step: Add AI Agent (optional, for A grade)
 """)
