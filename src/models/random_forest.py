@@ -32,7 +32,7 @@ class RandomForestRecommender:
         for idx, row in reviews_df.iterrows():
             user_id = row['user_id']
             city = row['city']
-            rating = row['rating']
+            rating = row['stars']
 
             # Get user features - use defaults if user not in training set
             user_feat = user_features_df[user_features_df['user_id'] == user_id]
