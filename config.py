@@ -86,6 +86,8 @@ TOWER_EPOCHS = 20
 FEATURE_CONFIGS = {
     "baseline": ["user_rating_behavior", "destination_stats"],
     "with_weather": ["user_rating_behavior", "destination_stats", "weather"],
+    "with_budget": ["user_rating_behavior", "destination_stats", "price_level"],
     "with_embeddings": ["user_rating_behavior", "destination_stats", "review_embeddings"],
-    "full": ["user_rating_behavior", "destination_stats", "weather", "review_embeddings"]
+    "with_weather_budget": ["user_rating_behavior", "destination_stats", "weather", "price_level"],
+    "full": ["user_rating_behavior", "destination_stats", "weather", "price_level", "review_embeddings"]
 }
