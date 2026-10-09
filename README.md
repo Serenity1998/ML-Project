@@ -109,11 +109,13 @@ We experimentally measure the contribution of weather and review embeddings by c
 - Historical weather and climate data by location and month
 
 ### Constructed Labels
-Since we don't have explicit "user A → destination B = good" labels, we construct them:
-- **Positive**: User's cross-city reviews with high ratings (★★★★★)
-- **Negative**: Cities not yet visited by user
-- **Primary city**: Inferred from where user has written most reviews
-- **Filter**: Users with ≥2 cities and ≥10 reviews for training signal
+Since we don't have explicit "user A → destination B = good" labels, we construct them (leave-one-city-out):
+- **Positive**: one city the user visited, hidden from their history (any visit, not only 5★, to keep enough data)
+- **Negative**: 4 cities the user never reviewed
+- **History**: all other reviews; user features come only from here, so the answer never leaks in
+- **Home city**: the city with the user's most history reviews
+- **Filter**: Users with ≥2 cities and ≥10 reviews
+- **Split**: users 70 / 10 / 20 into train / validation / test (a user is never in two sets)
 
 ## Models
 
@@ -145,51 +147,58 @@ Train/test split by user (same user never in both).
 
 ## Final Results
 
-### Best Model: Random Forest with Embeddings
-- **MSE: 1.093** (14.84% improvement over baseline)
-- **MAE: 0.868**
-- **R²: -0.153**
-- **68% improvement** over Popularity baseline
+Ranking ~276 candidate cities for each of 1,968 test users (10% user sample).
+Notebook: `notebooks/phase4_models/03_ranking_models.ipynb`.
+
+| Model | Recall@10 | NDCG@10 | MRR@10 |
+|-------|-----------|---------|--------|
+| Random guess | 0.038 | 0.018 | 0.013 |
+| Popularity baseline | 0.358 | 0.180 | 0.126 |
+| **Random Forest (Full)** | **0.725** | **0.543** | **0.486** |
+| Two-Tower (Baseline) | 0.634 | 0.432 | 0.370 |
+
+![Recall@10 by model](reports/figures/recall_by_model.png)
+
+### Ablation (Recall@10)
+
+| Config | Random Forest | Two-Tower |
+|--------|---------------|-----------|
+| Baseline (user + city + distance) | 0.723 | 0.634 |
+| +Weather (trip month) | 0.720 | 0.633 |
+| +Embeddings (review text) | 0.725 | 0.625 |
+| Full | 0.725 | 0.632 |
+
+![Ablation](reports/figures/ablation.png)
 
 ### Key Findings
-1. **User preferences dominate** (24% feature importance)
-2. **Embeddings provide +14.84% improvement**
-3. **Weather features hurt performance** (-10.74% degradation)
-4. **Random Forest outperforms neural networks** (75% better on MSE)
+1. **RQ4 — models:** Random Forest (0.725) beats Two-Tower (0.634); both double the Popularity baseline (0.358).
+2. **RQ1 — weather:** no gain (0.723 → 0.720). 81% of hidden cities are within 50 km of home, so trips share the home climate.
+3. **RQ2 — review embeddings:** no meaningful gain (0.723 → 0.725) once distance and city size are known.
+4. **RQ3 — combined:** Full config 0.725, same as embeddings alone.
+5. **Distance drives the ranking** (43% of RF importance), then city review volume and size.
+6. **Error analysis:** Recall@10 is 0.766 for trips under 50 km, 0.588 over 500 km, and 0.275 for 50–500 km (51 users).
+
+![Feature importance](reports/figures/feature_importance.png)
+![Recall by trip distance](reports/figures/recall_by_distance.png)
+
+Full-data check (19,674 test users): Popularity Recall@10 0.352, Cosine 0.014, matching the 10% sample.
 
 ### Deliverables
-- ✅ Trained Random Forest model (`outputs/random_forest_model.joblib`)
-- ✅ Trained Two-Tower network (`outputs/two_tower_model.pth`)
-- ✅ 804-dimensional feature vectors with weather + embeddings
-- ✅ Comprehensive final report (`reports/PHASE_6_FINAL_REPORT.md`)
+- ✅ Leave-one-city-out labels and evaluation harness (`src/data/labels.py`, `src/evaluation/harness.py`)
+- ✅ Ranking models (`src/models/rankers.py`) and features (`src/features/ranking_features.py`, `src/features/review_embeddings.py`)
+- ✅ Results notebook and charts (`notebooks/phase4_models/03_ranking_models.ipynb`, `reports/figures/`)
 
 ## Running the Project
 
-### All Phases Complete - Review Results
-See `PROJECT_COMPLETE.md` for final results and recommendations.
-
-View detailed analysis:
+### Reproduce the results
+Run `notebooks/phase1_data_prep/01`–`05` to build the data and labels, then:
 
 ```bash
-# View final results and analysis
-cat PROJECT_COMPLETE.md
-cat reports/PHASE_6_FINAL_REPORT.md
-
-# Load and use the trained Random Forest model
-python3 << 'EOF'
-import joblib
-import numpy as np
-
-# Load trained Random Forest
-model = joblib.load('outputs/random_forest_model.joblib')
-
-# Make predictions on new user-destination pairs
-# X should be 804-dimensional feature vectors
-predictions = model.predict(X_test)
-print(f"Predicted ratings: {predictions}")
-EOF
-
+cd notebooks/phase4_models
+jupyter nbconvert --to notebook --execute --inplace 03_ranking_models.ipynb   # ~15 min on the 10% sample
 ```
+
+Results print in the notebook and the charts are written to `reports/figures/`.
 
 ## Quick Links
 

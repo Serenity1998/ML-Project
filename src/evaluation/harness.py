@@ -131,10 +131,11 @@ class RecommendationHarness:
             'position': pos
         }
 
-    def evaluate(self, pairs, all_cities, score_fn, k=10):
+    def evaluate(self, pairs, all_cities, score_fn, k=10, per_user=False):
         """
         Rank each user's candidate cities by score_fn and aggregate Recall/NDCG/MRR@k.
         score_fn: takes a DataFrame of (user_id, city) rows, returns one score per row.
+        per_user=True returns one row of metrics per user instead of the averages.
         """
         rows = [
             (user_id, city)
@@ -148,5 +149,7 @@ class RecommendationHarness:
         results = []
         for user_id, group in candidates.groupby('user_id', sort=False):
             rankings = group.sort_values('score', ascending=False)['city'].tolist()
-            results.append(self.evaluate_ranking(rankings, held_out[user_id], k))
+            results.append({'user_id': user_id, **self.evaluate_ranking(rankings, held_out[user_id], k)})
+        if per_user:
+            return pd.DataFrame(results)
         return aggregate_metrics(results, k)

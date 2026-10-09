@@ -6,6 +6,7 @@ USER_FEATURES = ['user_avg_stars', 'user_std_stars', 'user_log_reviews', 'user_n
 CITY_FEATURES = ['city_log_businesses', 'city_avg_stars', 'city_log_reviews', 'lat', 'lon']
 PAIR_FEATURES = ['distance_km']
 WEATHER_FEATURES = ['city_temp', 'city_precip', 'temp_diff']
+TEXT_FEATURES = ['text_similarity']
 
 
 def city_features(businesses_df):
@@ -55,8 +56,8 @@ def city_month_weather(cities_df, weather_builder):
     return pd.concat(rows, ignore_index=True).set_index(['city', 'month'])
 
 
-def build_pair_features(pairs_df, users_df, cities_df, months, weather=None):
-    """Join user, city and pair features onto (user_id, city) rows; add trip-month weather if given."""
+def build_pair_features(pairs_df, users_df, cities_df, months, weather=None, text=None):
+    """Join user, city and pair features onto (user_id, city) rows; add weather and review text if given."""
     df = pairs_df.join(users_df, on='user_id').join(cities_df, on='city')
 
     lat1, lon1, lat2, lon2 = (np.radians(df[c]) for c in ['home_lat', 'home_lon', 'lat', 'lon'])
@@ -71,5 +72,12 @@ def build_pair_features(pairs_df, users_df, cities_df, months, weather=None):
         df['city_precip'] = weather['total_precipitation'].reindex(city_key).to_numpy()
         df['temp_diff'] = df['city_temp'] - weather['avg_temp'].reindex(home_key).to_numpy()
         df[WEATHER_FEATURES] = df[WEATHER_FEATURES].fillna(df[WEATHER_FEATURES].median())
+
+    if text is not None:
+        similarity = text['similarity']
+        rows = similarity.index.get_indexer(df['user_id'])
+        cols = similarity.columns.get_indexer(df['city'])
+        df['text_similarity'] = similarity.to_numpy()[rows, cols]
+        df = df.join(text['user_pcs'], on='user_id').join(text['city_pcs'], on='city')
 
     return df
