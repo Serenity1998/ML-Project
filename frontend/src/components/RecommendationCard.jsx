@@ -30,6 +30,18 @@ export default function RecommendationCard({ recommendation, sessionId, onFeedba
               e.target.style.display = 'none'
             }}
           />
+          {recommendation.image_credit?.photographer && (
+            <div className="image-credit">
+              Photo by{' '}
+              <a href={recommendation.image_credit.photographer_url} target="_blank" rel="noopener noreferrer">
+                {recommendation.image_credit.photographer}
+              </a>{' '}
+              on{' '}
+              <a href={recommendation.image_credit.unsplash_url} target="_blank" rel="noopener noreferrer">
+                Unsplash
+              </a>
+            </div>
+          )}
         </div>
       )}
 

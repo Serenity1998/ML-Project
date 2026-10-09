@@ -4,7 +4,6 @@ from pydantic import BaseModel
 import uuid
 import calendar
 from concurrent.futures import ThreadPoolExecutor
-from functools import lru_cache
 import numpy as np
 import pandas as pd
 import sys
@@ -15,11 +14,16 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Load API keys (UNSPLASH_API_KEY, ANTHROPIC_API_KEY) from backend/.env before
+# the modules below read them at import time
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
+
 from backend.db import init_db, save_session, get_session, log_feedback, get_metrics
 from backend.agent import chat_with_agent, explain_recommendations
 from backend.scorer import score_cities
 from backend.bandit import get_or_create_bandit
-from backend.image_service import fetch_image_sync, get_weather_condition
+from backend.image_service import fetch_photo_sync, get_weather_condition
 
 # Initialize FastAPI app
 app = FastAPI(title="Travel Recommender API")
@@ -108,10 +112,18 @@ def reason_for(row, prefs):
     parts.append(f"{int(row['num_businesses']):,} places on Yelp")
     return " · ".join(parts)
 
-@lru_cache(maxsize=2048)
-def cached_image(city, weather_condition, travel_month):
-    # Unsplash demo keys allow ~50 requests/hour, so never fetch the same image twice
-    return fetch_image_sync(city, weather_condition, travel_month)
+_PHOTO_CACHE: dict[tuple, dict] = {}
+
+def cached_photo(city, weather_condition, travel_month):
+    # Unsplash demo keys allow 50 requests/hour, so never fetch the same photo
+    # twice. Only successes are cached: a miss (e.g. rate limited) retries later.
+    key = (city, weather_condition)
+    if key not in _PHOTO_CACHE:
+        photo = fetch_photo_sync(city, weather_condition, travel_month)
+        if not photo:
+            return None
+        _PHOTO_CACHE[key] = photo
+    return _PHOTO_CACHE[key]
 
 # Pydantic models
 class ChatRequest(BaseModel):
@@ -149,6 +161,7 @@ class CityRecommendation(BaseModel):
     match_score: float = 0.0  # 0-1 overall fit to the submitted preferences
     explanation: str = ""
     image_url: str = ""  # Unsplash image URL
+    image_credit: dict = {}  # {photographer, photographer_url, unsplash_url}
     weather: dict = {}  # Weather info (condition, temp, etc)
 
 class RecommendationSection(BaseModel):
@@ -267,8 +280,8 @@ async def recommend(req: RecommendRequest):
     }
     # Fetch weather-appropriate images from Unsplash in parallel
     with ThreadPoolExecutor(max_workers=8) as pool:
-        images = dict(zip(conditions, pool.map(
-            lambda idx: cached_image(shown_df.at[idx, "city"], conditions[idx], prefs.travel_month),
+        photos = dict(zip(conditions, pool.map(
+            lambda idx: cached_photo(shown_df.at[idx, "city"], conditions[idx], prefs.travel_month),
             conditions,
         )))
 
@@ -287,7 +300,8 @@ async def recommend(req: RecommendRequest):
             match_score=float(row["combined_score"]),
             reason=reason_for(row, prefs),
             explanation=explanations.get(row["city"], ""),
-            image_url=images[idx] or "",
+            image_url=photos[idx]["url"] if photos[idx] else "",
+            image_credit={k: v for k, v in (photos[idx] or {}).items() if k != "url"},
             weather={
                 "condition": conditions[idx],
                 "temp": float(row["dest_temp"] * 9 / 5 + 32),

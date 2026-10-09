@@ -129,42 +129,42 @@ async def fetch_images_for_recommendations(
 
     return recommendations
 
-# Synchronous wrapper for FastAPI (since we can't use async in all contexts)
-def fetch_image_sync(city: str, weather_condition: str, travel_month: int = 6) -> Optional[str]:
-    """Synchronous version for direct calls"""
+# Unsplash API guidelines: credit the photographer and link back to Unsplash
+# with these referral parameters.
+UNSPLASH_APP_NAME = os.getenv("UNSPLASH_APP_NAME", "travel_recommender")
+UTM = f"utm_source={UNSPLASH_APP_NAME}&utm_medium=referral"
+
+def _search_photo(query: str) -> Optional[dict]:
+    """First Unsplash search result as {url, photographer, photographer_url, unsplash_url}."""
+    import requests
+    params = {"query": query, "per_page": 1, "order_by": "relevant", "client_id": UNSPLASH_API_KEY}
+    response = requests.get(UNSPLASH_API_BASE, params=params, timeout=5)
+    if response.status_code != 200:
+        return None
+    results = response.json().get("results")
+    if not results:
+        return None
+    photo = results[0]
+    return {
+        "url": photo["urls"]["regular"],
+        "photographer": photo["user"]["name"],
+        "photographer_url": f"{photo['user']['links']['html']}?{UTM}",
+        "unsplash_url": f"https://unsplash.com/?{UTM}",
+    }
+
+# Synchronous versions for FastAPI
+def fetch_photo_sync(city: str, weather_condition: str, travel_month: int = 6) -> Optional[dict]:
+    """Weather-themed photo of the city, falling back to any photo of the city."""
+    if not UNSPLASH_API_KEY:
+        return None
     try:
         weather_keywords = WEATHER_KEYWORDS.get(weather_condition, "travel destination")
-        query = f"{city} {weather_keywords}"
-
-        params = {
-            "query": query,
-            "per_page": 1,
-            "order_by": "relevant",
-            "client_id": UNSPLASH_API_KEY
-        }
-
-        import requests
-        response = requests.get(UNSPLASH_API_BASE, params=params, timeout=5)
-
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("results") and len(data["results"]) > 0:
-                return data["results"][0]["urls"]["regular"]
-
-        # Fallback
-        fallback_params = {
-            "query": city,
-            "per_page": 1,
-            "client_id": UNSPLASH_API_KEY
-        }
-        response = requests.get(UNSPLASH_API_BASE, params=fallback_params, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("results"):
-                return data["results"][0]["urls"]["regular"]
-
-        return None
-
+        return _search_photo(f"{city} {weather_keywords}") or _search_photo(city)
     except Exception as e:
         print(f"Error fetching image for {city}: {e}")
         return None
+
+def fetch_image_sync(city: str, weather_condition: str, travel_month: int = 6) -> Optional[str]:
+    """Image URL only (see fetch_photo_sync for photographer credit)."""
+    photo = fetch_photo_sync(city, weather_condition, travel_month)
+    return photo["url"] if photo else None
