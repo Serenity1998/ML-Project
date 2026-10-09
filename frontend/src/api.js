@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'http://localhost:8001'
 
 export async function chat(sessionId, message) {
   const response = await fetch(`${API_BASE}/chat`, {
@@ -36,6 +36,17 @@ export async function getMetrics() {
 }
 
 export async function healthCheck() {
-  const response = await fetch(`${API_BASE}/health`)
-  return response.json()
+  try {
+    const response = await fetch(`${API_BASE}/health`)
+    if (!response.ok) {
+      console.error(`Health check failed: ${response.status} ${response.statusText}`)
+      throw new Error(`HTTP ${response.status}`)
+    }
+    const data = await response.json()
+    console.log('Health check success:', data)
+    return data
+  } catch (error) {
+    console.error('Health check error:', error.message, error)
+    throw error
+  }
 }

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destination Recommendation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .interests-group {
+            margin-bottom: 20px;
+        }
+
+        .interest-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            background: #f0f0f0;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .interest-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .interest-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-recommend {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-recommend:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-compare {
+            background: #764ba2;
+            color: white;
+        }
+
+        .btn-compare:hover {
+            background: #63398a;
+        }
+
+        .btn-clear {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #ff5252;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .results h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .recommendation-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .recommendation-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recommendation-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            min-width: 30px;
+        }
+
+        .city-name {
+            flex: 1;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+
+        .score {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Destination Recommendation System</h1>
+
+        <div class="content">
+            <!-- Preferences 1 -->
+            <div class="card">
+                <h2>Traveler 1 Preferences</h2>
+                <div class="interests-group" id="interests1">
+                    <!-- Buttons will be generated by JS -->
+                </div>
+                <div class="btn-group">
+                    <button class="btn-recommend" onclick="getRecommendations(1)">Get Recommendations</button>
+                    <button class="btn-clear" onclick="clearSelections(1)">Clear</button>
+                </div>
+            </div>
+
+            <!-- Preferences 2 -->
+            <div class="card">
+                <h2>Traveler 2 Preferences</h2>
+                <div class="interests-group" id="interests2">
+                    <!-- Buttons will be generated by JS -->
+                </div>
+                <div class="btn-group">
+                    <button class="btn-recommend" onclick="getRecommendations(2)">Get Recommendations</button>
+                    <button class="btn-clear" onclick="clearSelections(2)">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compare Button -->
+        <div class="card" style="text-align: center; margin-bottom: 30px;">
+            <button class="btn-compare" onclick="comparePreferences()" style="width: 200px; padding: 15px 30px; font-size: 1.1em;">
+                Compare Both Travelers 🔄
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results" style="display: none;">
+            <h3>Recommendations</h3>
+            <div class="results-grid" id="resultsGrid">
+                <!-- Results will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const selections = {
+            1: new Set(),
+            2: new Set()
+        };
+
+        // Load interests on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL}/interests`);
+                const data = await response.json();
+
+                data.interests.forEach(interest => {
+                    // Add to traveler 1
+                    const btn1 = document.createElement('button');
+                    btn1.className = 'interest-btn';
+                    btn1.textContent = interest;
+                    btn1.onclick = () => toggleInterest(1, interest, btn1);
+                    document.getElementById('interests1').appendChild(btn1);
+
+                    // Add to traveler 2
+                    const btn2 = document.createElement('button');
+                    btn2.className = 'interest-btn';
+                    btn2.textContent = interest;
+                    btn2.onclick = () => toggleInterest(2, interest, btn2);
+                    document.getElementById('interests2').appendChild(btn2);
+                });
+            } catch (error) {
+                console.error('Error loading interests:', error);
+            }
+        });
+
+        function toggleInterest(traveler, interest, button) {
+            if (selections[traveler].has(interest)) {
+                selections[traveler].delete(interest);
+                button.classList.remove('active');
+            } else {
+                selections[traveler].add(interest);
+                button.classList.add('active');
+            }
+        }
+
+        async function getRecommendations(traveler) {
+            if (selections[traveler].size === 0) {
+                alert('Please select at least one interest!');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            const resultsGrid = document.getElementById('resultsGrid');
+            resultsGrid.innerHTML = '<div class="loading"><div class="spinner"></div>Loading recommendations...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/recommend`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        interests: Array.from(selections[traveler])
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `<div><h3>Traveler ${traveler}</h3>`;
+                    html += `<p>Interests: ${data.interests.join(', ')}</p>`;
+                    html += '<div class="recommendation-list">';
+
+                    data.recommendations.forEach((rec, idx) => {
+                        html += `
+                            <div class="recommendation-item">
+                                <span class="rank">#${idx + 1}</span>
+                                <span class="city-name">${rec.city}</span>
+                                <span class="score">${(rec.score * 100).toFixed(0)}%</span>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div></div>';
+                    resultsGrid.innerHTML = html;
+                } else {
+                    resultsGrid.innerHTML = `<div class="no-results">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsGrid.innerHTML = `<div class="no-results">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function comparePreferences() {
+            if (selections[1].size === 0 || selections[2].size === 0) {
+                alert('Please select interests for both travelers!');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            const resultsGrid = document.getElementById('resultsGrid');
+            resultsGrid.innerHTML = '<div class="loading"><div class="spinner"></div>Comparing preferences...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/compare`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        preferences1: Array.from(selections[1]),
+                        preferences2: Array.from(selections[2])
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '<h3>Comparison Results</h3>';
+
+                    html += '<div style="margin-top: 20px;"><h4>Traveler 1: ' + data.preferences1.join(', ') + '</h4>';
+                    html += '<div class="recommendation-list">';
+                    data.recommendations1.forEach((rec, idx) => {
+                        html += `
+                            <div class="recommendation-item">
+                                <span class="rank">#${idx + 1}</span>
+                                <span class="city-name">${rec.city}</span>
+                                <span class="score">${(rec.score * 100).toFixed(0)}%</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div></div>';
+
+                    html += '<div style="margin-top: 20px;"><h4>Traveler 2: ' + data.preferences2.join(', ') + '</h4>';
+                    html += '<div class="recommendation-list">';
+                    data.recommendations2.forEach((rec, idx) => {
+                        html += `
+                            <div class="recommendation-item">
+                                <span class="rank">#${idx + 1}</span>
+                                <span class="city-name">${rec.city}</span>
+                                <span class="score">${(rec.score * 100).toFixed(0)}%</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div></div>';
+
+                    resultsGrid.innerHTML = html;
+                }
+            } catch (error) {
+                resultsGrid.innerHTML = `<div class="no-results">Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearSelections(traveler) {
+            selections[traveler].clear();
+            document.querySelectorAll(`#interests${traveler} .interest-btn`).forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+</html>

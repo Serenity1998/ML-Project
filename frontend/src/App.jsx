@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import PreferenceForm from './components/PreferenceForm'
 import ChatPanel from './components/ChatPanel'
 import PreferenceSummary from './components/PreferenceSummary'
@@ -63,7 +63,12 @@ function App() {
     setLoading(true)
     try {
       const response = await getRecommendations(sessionId, prefs)
-      setRecommendations(response.recommendations)
+      // Older backends return only the flat list; show it as a single section
+      setRecommendations(
+        response.sections?.length
+          ? response.sections
+          : [{ key: 'top', title: '🏙️ Top Recommendations', description: '', recommendations: response.recommendations }]
+      )
       setPreferences(prefs)
     } catch (error) {
       console.error('Recommendation error:', error)
@@ -89,13 +94,14 @@ function App() {
         <PreferenceForm onSubmit={handleFormSubmit} loading={loading} />
 
         {/* Recommendations Section */}
-        {recommendations && (
-          <div className="recommendations-section">
-            <h2>🏙️ Top Recommendations</h2>
+        {recommendations && recommendations.map(section => (
+          <div className="recommendations-section" key={section.key}>
+            <h2>{section.title}</h2>
+            {section.description && <p className="section-description">{section.description}</p>}
             <div className="recommendations-grid">
-              {recommendations.map((rec, idx) => (
+              {section.recommendations.map(rec => (
                 <RecommendationCard
-                  key={idx}
+                  key={rec.city}
                   recommendation={rec}
                   sessionId={sessionId}
                   onFeedback={() => {
@@ -105,7 +111,7 @@ function App() {
               ))}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Chat & Metrics Section */}
         <div className="bottom-container">

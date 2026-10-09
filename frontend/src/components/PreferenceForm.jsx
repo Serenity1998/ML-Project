@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import './PreferenceForm.css'
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December']
-
 const ACTIVITY_OPTIONS = [
   'Hiking', 'Beaches', 'Museums', 'Food/Dining', 'Shopping',
   'Nightlife', 'Parks', 'History', 'Art', 'Sports'
 ]
 
 export default function PreferenceForm({ onSubmit, loading }) {
-  const [month, setMonth] = useState(6)
+  // Initialize with a date 6 months from now
+  const today = new Date()
+  const defaultDate = new Date(today.getFullYear(), today.getMonth() + 6, 1)
+  const defaultDateStr = defaultDate.toISOString().split('T')[0]
+
+  const [travelDate, setTravelDate] = useState(defaultDateStr)
   const [climate, setClimate] = useState('moderate')
   const [budget, setBudget] = useState('medium')
   const [activities, setActivities] = useState(['Hiking', 'Beaches'])
@@ -26,6 +28,10 @@ export default function PreferenceForm({ onSubmit, loading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    // Extract month (1-12) from date
+    const date = new Date(travelDate)
+    const month = date.getMonth() + 1
+
     onSubmit({
       travel_month: month,
       climate_preference: climate,
@@ -39,17 +45,14 @@ export default function PreferenceForm({ onSubmit, loading }) {
     <form className="preference-form" onSubmit={handleSubmit}>
       <div className="form-grid">
         <div className="form-group">
-          <label htmlFor="month">Travel Month</label>
-          <select
-            id="month"
-            value={month}
-            onChange={(e) => setMonth(parseInt(e.target.value))}
+          <label htmlFor="travelDate">Travel Date</label>
+          <input
+            id="travelDate"
+            type="date"
+            value={travelDate}
+            onChange={(e) => setTravelDate(e.target.value)}
             disabled={loading}
-          >
-            {MONTHS.map((m, i) => (
-              <option key={i} value={i + 1}>{m}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="form-group">
