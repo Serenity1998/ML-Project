@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uuid
+import time
+from collections import defaultdict, deque
 import calendar
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
@@ -125,6 +127,31 @@ def cached_photo(city, weather_condition, travel_month):
         _PHOTO_CACHE[key] = photo
     return _PHOTO_CACHE[key]
 
+# Chat guardrails: per-session history (kept in memory) and usage limits
+MAX_MESSAGE_CHARS = 500
+MAX_USER_TURNS = 20          # per session
+RATE_LIMIT_MESSAGES = 6      # per RATE_LIMIT_WINDOW_S seconds, per session
+RATE_LIMIT_WINDOW_S = 60
+_CHAT_HISTORY: dict[str, list[dict]] = defaultdict(list)
+_CHAT_TIMES: dict[str, deque] = defaultdict(deque)
+
+def chat_limit_reply(session_id: str, message: str) -> str | None:
+    """Canned reply if this message breaks a chat limit, else None."""
+    if not message:
+        return "Tell me a bit about the trip you have in mind - for example, when you'd like to travel."
+    if len(message) > MAX_MESSAGE_CHARS:
+        return f"That message is a bit long - could you keep it under {MAX_MESSAGE_CHARS} characters?"
+    if sum(m["role"] == "user" for m in _CHAT_HISTORY[session_id]) >= MAX_USER_TURNS:
+        return "We've chatted a lot! Please use the form above to adjust your preferences."
+    times = _CHAT_TIMES[session_id]
+    now = time.monotonic()
+    while times and now - times[0] > RATE_LIMIT_WINDOW_S:
+        times.popleft()
+    if len(times) >= RATE_LIMIT_MESSAGES:
+        return "You're sending messages quickly - please wait a moment and try again."
+    times.append(now)
+    return None
+
 # Pydantic models
 class ChatRequest(BaseModel):
     session_id: str
@@ -133,7 +160,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     session_id: str
     agent_reply: str
-    preferences_extracted: dict = None
+    preferences_extracted: dict | None = None
 
 class UserPreferences(BaseModel):
     travel_month: int = 6
@@ -191,27 +218,25 @@ async def health_check():
         return {"status": "error", "message": str(e)}
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
+def chat(req: ChatRequest):
     """
     Chat with the conversational agent.
     Agent gathers user preferences through natural conversation.
+    (Plain def: FastAPI runs it in a worker thread, so the blocking API call
+    doesn't stall other requests.)
     """
     # Get or create session
-    session = get_session(req.session_id)
-    if not session:
-        session = {"session_id": req.session_id, "user_prefs": None, "message_count": 0}
+    if not get_session(req.session_id):
         save_session(req.session_id, None)
 
-    # Build conversation history (simplified: just use the message count)
-    # In production, store full history in DB
-    history = []  # Agent doesn't need full history for fallback
+    message = req.message.strip()
+    limit_reply = chat_limit_reply(req.session_id, message)
+    if limit_reply:
+        return ChatResponse(session_id=req.session_id, agent_reply=limit_reply)
 
-    # Chat with agent
-    agent_reply, extracted_prefs = chat_with_agent(
-        req.session_id,
-        req.message,
-        history
-    )
+    history = _CHAT_HISTORY[req.session_id]
+    agent_reply, extracted_prefs = chat_with_agent(req.session_id, message, list(history))
+    history += [{"role": "user", "content": message}, {"role": "assistant", "content": agent_reply}]
 
     # If preferences were extracted, save them
     if extracted_prefs:
@@ -224,7 +249,7 @@ async def chat(req: ChatRequest):
     )
 
 @app.post("/recommend", response_model=RecommendResponse)
-async def recommend(req: RecommendRequest):
+def recommend(req: RecommendRequest):
     """
     Get recommendations for the user based on their preferences.
     Uses Random Forest + Contextual Bandit scoring.

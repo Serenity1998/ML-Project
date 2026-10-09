@@ -38,6 +38,7 @@ export default function ChatPanel({ messages, onMessage, loading }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Tell me about your travel preferences..."
+          maxLength={500}
           disabled={loading}
         />
         <button type="submit" disabled={loading}>
