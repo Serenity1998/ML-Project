@@ -2,74 +2,94 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from src.evaluation.metrics import aggregate_metrics
+from src.data.labels import (
+    build_user_city_table,
+    assign_target_cities,
+    split_history,
+    build_training_labels,
+)
 
 
 class RecommendationHarness:
     """Evaluation framework for destination recommendations."""
 
-    def __init__(self, reviews_df, businesses_df, test_size=0.2, random_state=42):
+    def __init__(self, reviews_df, businesses_df, test_size=0.2, random_state=42, n_negatives=4, val_size=0.0):
         self.reviews = reviews_df
         self.businesses = businesses_df
         self.test_size = test_size
+        self.val_size = val_size
         self.random_state = random_state
+        self.n_negatives = n_negatives
+        self.user_city = None
+        self.targets = None
+        self.train_users = None
+        self.test_users = None
+        self.val_users = []
         self.train_reviews = None
         self.test_reviews = None
+        self.val_reviews = None
+        self._visited = None
 
-    def create_train_test_split(self, min_test_cities=1):
+    def create_train_test_split(self):
         """
-        Split data by user (not review).
-        Each test user must have visited multiple cities.
+        Hold out one target city per user, then split users (not reviews) into train/test.
+        Returned reviews are history only: each user's target-city reviews are removed.
         """
-        users = list(self.reviews['user_id'].unique())
-        train_users, test_users = train_test_split(
+        self.user_city = build_user_city_table(self.reviews, self.businesses)
+        self.targets = assign_target_cities(self.user_city, self.random_state)
+        history = split_history(self.reviews, self.businesses, self.targets)
+
+        users = sorted(self.targets['user_id'])
+        self.train_users, self.test_users = train_test_split(
             users,
             test_size=self.test_size,
             random_state=self.random_state
         )
+        # Validation users come out of train, so test users stay the same with or without them
+        if self.val_size:
+            self.train_users, self.val_users = train_test_split(
+                self.train_users,
+                test_size=self.val_size / (1 - self.test_size),
+                random_state=self.random_state
+            )
 
-        self.train_reviews = self.reviews[self.reviews['user_id'].isin(train_users)].copy()
-        self.test_reviews = self.reviews[self.reviews['user_id'].isin(test_users)].copy()
+        self.train_reviews = history[history['user_id'].isin(self.train_users)].copy()
+        self.test_reviews = history[history['user_id'].isin(self.test_users)].copy()
+        self.val_reviews = history[history['user_id'].isin(self.val_users)].copy()
 
         return self.train_reviews, self.test_reviews
 
+    def get_training_labels(self, all_cities):
+        """(user_id, city, label) rows for train users: target city = 1, sampled unvisited = 0."""
+        train_targets = self.targets[self.targets['user_id'].isin(self.train_users)]
+        return build_training_labels(
+            self.user_city,
+            all_cities,
+            train_targets,
+            self.n_negatives,
+            self.random_state
+        )
+
     def get_test_pairs(self):
-        """
-        Get (user, held_out_city) pairs for evaluation.
-        For each test user, hold out one city they visited.
-        """
-        pairs = []
-        for user_id in self.test_reviews['user_id'].unique():
-            user_reviews = self.test_reviews[self.test_reviews['user_id'] == user_id]
-            merged = user_reviews.merge(
-                self.businesses[['business_id', 'city']],
-                on='business_id'
-            )
-            cities_visited = merged['city'].unique()
+        """(user, held_out_city) pairs for evaluation: one held-out city per test user."""
+        test_targets = self.targets[self.targets['user_id'].isin(self.test_users)]
+        return list(test_targets.itertuples(index=False, name=None))
 
-            if len(cities_visited) >= 1:
-                # Hold out each city (could sample 1 if too many)
-                for held_out_city in cities_visited:
-                    pairs.append((user_id, held_out_city))
-
-        return pairs
+    def get_validation_pairs(self):
+        """(user, held_out_city) pairs for tuning: one held-out city per validation user."""
+        val_targets = self.targets[self.targets['user_id'].isin(self.val_users)]
+        return list(val_targets.itertuples(index=False, name=None))
 
     def get_ranking_candidates(self, user_id, held_out_city, all_cities):
         """
         Get cities to rank for (user, held_out_city).
-        Include held_out_city (positive) + sample of unvisited cities (negatives).
+        All cities except the user's history cities, so held_out_city competes with unvisited ones.
         """
-        user_reviews = self.train_reviews[self.train_reviews['user_id'] == user_id]
-        merged = user_reviews.merge(
-            self.businesses[['business_id', 'city']],
-            on='business_id'
-        )
-        cities_visited_in_train = set(merged['city'].unique())
-
-        # Candidates: held_out_city + unvisited cities
-        candidates = list(cities_visited_in_train) + [held_out_city]
-        candidates = list(set(candidates))
-
-        return candidates
+        if self._visited is None:
+            self._visited = self.user_city.groupby('user_id')['city'].apply(set).to_dict()
+        history_cities = self._visited[user_id] - {held_out_city}
+        return [city for city in all_cities if city not in history_cities]
 
     def evaluate_ranking(self, rankings, held_out_city, k=10):
         """
@@ -110,3 +130,26 @@ class RecommendationHarness:
             'mrr': mrr,
             'position': pos
         }
+
+    def evaluate(self, pairs, all_cities, score_fn, k=10, per_user=False):
+        """
+        Rank each user's candidate cities by score_fn and aggregate Recall/NDCG/MRR@k.
+        score_fn: takes a DataFrame of (user_id, city) rows, returns one score per row.
+        per_user=True returns one row of metrics per user instead of the averages.
+        """
+        rows = [
+            (user_id, city)
+            for user_id, held_out_city in pairs
+            for city in self.get_ranking_candidates(user_id, held_out_city, all_cities)
+        ]
+        candidates = pd.DataFrame(rows, columns=['user_id', 'city'])
+        candidates['score'] = score_fn(candidates)
+
+        held_out = dict(pairs)
+        results = []
+        for user_id, group in candidates.groupby('user_id', sort=False):
+            rankings = group.sort_values('score', ascending=False)['city'].tolist()
+            results.append({'user_id': user_id, **self.evaluate_ranking(rankings, held_out[user_id], k)})
+        if per_user:
+            return pd.DataFrame(results)
+        return aggregate_metrics(results, k)

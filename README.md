@@ -111,11 +111,12 @@ We experimentally measure the contribution of weather and review embeddings by c
 - Historical weather and climate data by location and month
 
 ### Constructed Labels
-Since we don't have explicit "user A → destination B = good" labels, we construct them:
-- **Positive**: User's cross-city reviews with high ratings (★★★★★)
-- **Negative**: Cities not yet visited by user
-- **Primary city**: Inferred from where user has written most reviews
-- **Filter**: Users with ≥2 cities and ≥10 reviews for training signal
+Since we don't have explicit "user A → destination B = good" labels, we construct them (leave-one-city-out):
+- **Positive**: one city the user visited, hidden from their history
+- **Negative**: 4 cities the user never reviewed
+- **History**: all other reviews; user features come only from here
+- **Filter**: Users with ≥2 cities and ≥10 reviews
+- **Split**: users 70 / 10 / 20 into train / validation / test
 
 ## Models
 
@@ -178,6 +179,21 @@ Train/test split by user (same user never in both).
 - ✅ Multi-armed bandit for exploration/exploitation
 - ✅ ML pipeline scripts (phases 1-5)
 - ✅ Comprehensive analysis and reports
+
+### Ranking Evaluation (Recall@10)
+Ranking ~276 candidate cities for each of 1,968 held-out test users (10% user sample) —
+`notebooks/phase4_models/03_ranking_models.ipynb`, charts in `reports/figures/`.
+
+| Model | Recall@10 |
+|-------|-----------|
+| Random guess | 0.038 |
+| Popularity baseline | 0.358 |
+| **Random Forest** | **0.725** |
+| Two-Tower | 0.634 |
+
+![Recall@10 by model](reports/figures/recall_by_model.png)
+
+Limitation: some cities appear under several spellings ("St. Louis" / "Saint Louis"), affecting 7.1% of test users and slightly inflating Recall@10.
 
 ## Running the Project
 
