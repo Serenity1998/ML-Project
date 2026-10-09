@@ -193,6 +193,8 @@ Ranking ~276 candidate cities for each of 1,968 held-out test users (10% user sa
 
 ![Recall@10 by model](reports/figures/recall_by_model.png)
 
+Limitation: some cities appear under several spellings ("St. Louis" / "Saint Louis"), affecting 7.1% of test users and slightly inflating Recall@10.
+
 ## Running the Project
 
 ### Option 1: Full Stack (React + FastAPI) - **RECOMMENDED** ⭐
