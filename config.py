@@ -44,6 +44,7 @@ PHASE1_MIN_USER_CITIES = 2  # Cross-city requirement
 
 # Evaluation for Phase 1
 PHASE1_TEST_SIZE = 0.2
+PHASE1_VAL_SIZE = 0.1  # Validation users for tuning ranking models
 PHASE1_EVAL_K = 10  # Compute Recall@10, NDCG@10, MRR@10
 PHASE1_NEGATIVES_PER_POSITIVE = 4  # Unvisited cities sampled per held-out city
 
