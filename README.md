@@ -212,18 +212,15 @@ Results print in the notebook and the charts are written to `reports/figures/`.
 ## Model Usage
 
 ```python
-import joblib
-import numpy as np
+from src.features.ranking_features import USER_FEATURES, CITY_FEATURES, PAIR_FEATURES, build_pair_features
+from src.models.rankers import RandomForestRanker
 
-# Load trained Random Forest
-model = joblib.load('outputs/random_forest_model.joblib')
+# train_df: (user_id, city, label) rows with features, built as in notebook 03
+rf = RandomForestRanker(USER_FEATURES + CITY_FEATURES + PAIR_FEATURES, max_depth=8).fit(train_df)
 
-# Make predictions (804-dimensional feature vectors)
-predictions = model.predict(X_test)
-
-# Get feature importance
-importance = model.get_feature_importance(top_n=20)
-print(importance)
+# Score a user's candidate cities: higher score = recommend first
+scores = rf.score(build_pair_features(candidates, users, cities, months))
+print(rf.feature_importance())
 ```
 
 ## Key Configuration (config.py)
