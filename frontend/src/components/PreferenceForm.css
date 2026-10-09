@@ -32,7 +32,8 @@
 }
 
 .form-group select,
-.form-group textarea {
+.form-group textarea,
+.form-group input[type="date"] {
   padding: 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: 8px;
@@ -42,14 +43,16 @@
 }
 
 .form-group select:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group input[type="date"]:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .form-group select:disabled,
-.form-group textarea:disabled {
+.form-group textarea:disabled,
+.form-group input[type="date"]:disabled {
   background: var(--gray-100);
   cursor: not-allowed;
 }

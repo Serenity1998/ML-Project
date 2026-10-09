@@ -44,3 +44,8 @@ frontend/dist/
 
 # Backend database
 backend/app.db
+# Vite cache
+frontend/.vite/
+
+# API keys
+.env

@@ -41,7 +41,8 @@ body {
 }
 
 .header {
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)),
+    url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80') center/cover;
   padding: 2rem;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -84,8 +85,17 @@ body {
 
 .recommendations-section h2 {
   color: var(--gray-800);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.25rem;
   font-size: 1.5rem;
+}
+
+.section-description {
+  color: var(--gray-500);
+  margin: 0 0 1.25rem;
+}
+
+.recommendations-section + .recommendations-section {
+  margin-top: 1rem;
 }
 
 .recommendations-grid {

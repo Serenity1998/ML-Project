@@ -21,12 +21,43 @@ export default function RecommendationCard({ recommendation, sessionId, onFeedba
 
   return (
     <div className="recommendation-card">
+      {recommendation.image_url && (
+        <div className="card-image">
+          <img
+            src={recommendation.image_url}
+            alt={recommendation.city}
+            onError={(e) => {
+              e.target.style.display = 'none'
+            }}
+          />
+          {recommendation.image_credit?.photographer && (
+            <div className="image-credit">
+              Photo by{' '}
+              <a href={recommendation.image_credit.photographer_url} target="_blank" rel="noopener noreferrer">
+                {recommendation.image_credit.photographer}
+              </a>{' '}
+              on{' '}
+              <a href={recommendation.image_credit.unsplash_url} target="_blank" rel="noopener noreferrer">
+                Unsplash
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card-header">
-        <h4>#{recommendation.rank} {recommendation.city}</h4>
-        <div className="score-badge">
-          ⭐ {recommendation.rf_score.toFixed(1)}/5
+        <h4>
+          #{recommendation.rank} {recommendation.city}
+          {recommendation.metro && !recommendation.city.startsWith(recommendation.metro) && (
+            <span className="metro-label"> · {recommendation.metro} area</span>
+          )}
+        </h4>
+        <div className="score-badge" title={`Predicted rating ${recommendation.rf_score.toFixed(1)}/5`}>
+          🎯 {Math.round((recommendation.match_score ?? 0) * 100)}% match
         </div>
       </div>
+
+      {recommendation.reason && <p className="card-reason">{recommendation.reason}</p>}
 
       <div className="card-stats">
         <div className="stat">
@@ -44,6 +75,15 @@ export default function RecommendationCard({ recommendation, sessionId, onFeedba
             <div
               className="stat-fill"
               style={{ width: `${recommendation.activity_sim * 100}%` }}
+            />
+          </div>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Budget Fit:</span>
+          <div className="stat-bar">
+            <div
+              className="stat-fill"
+              style={{ width: `${(recommendation.budget_match ?? 0.5) * 100}%` }}
             />
           </div>
         </div>
