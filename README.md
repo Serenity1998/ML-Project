@@ -136,37 +136,85 @@ Train/test split by user (same user never in both).
 
 | Phase | Weeks | Deliverable | Status |
 |-------|-------|-------------|--------|
-| 1. Data Prep & Baselines | 1-6 | Sampling, filtering, evaluation harness, popularity + cosine-sim baselines | 🔥💯✔️ **Done** |
-| 2. Weather Features | 7-8 | Open-Meteo integration, monthly climate features | 🔥💯✔️ **Done** |
-| 3. Review Embeddings | 9 | Sentence-BERT embeddings, caching | 🚀 **In Progress** |
-| 4. ML Models | 10 | Random Forest + Two-Tower training | 🚀 **In Progress** |
-| 5. Ablation Experiments | 11 | Feature combinations, model comparison | 🚀 **In Progress** |
-| 6. Analysis & Presentation | 12 | Visualizations, feature importance, error analysis | Planned |
+| 1. Data Prep & Baselines | 1-6 | Sampling, filtering, evaluation harness, popularity + cosine-sim baselines | ✅ **Complete** |
+| 2. Weather Features | 7-8 | Open-Meteo integration, monthly climate features | ✅ **Complete** |
+| 3. Review Embeddings | 9 | Sentence-BERT embeddings, caching | ✅ **Complete** |
+| 4. ML Models | 10 | Random Forest + Two-Tower training | ✅ **Complete** |
+| 5. Ablation Experiments | 11 | Feature combinations, model comparison | ✅ **Complete** |
+| 6. Analysis & Presentation | 12 | Visualizations, feature importance, error analysis | ✅ **Complete** |
 
-## Starting Phase 1
+## Final Results
 
-Run notebooks in order:
+### Best Model: Random Forest with Embeddings
+- **MSE: 1.093** (14.84% improvement over baseline)
+- **MAE: 0.868**
+- **R²: -0.153**
+- **68% improvement** over Popularity baseline
+
+### Key Findings
+1. **User preferences dominate** (24% feature importance)
+2. **Embeddings provide +14.84% improvement**
+3. **Weather features hurt performance** (-10.74% degradation)
+4. **Random Forest outperforms neural networks** (75% better on MSE)
+
+### Deliverables
+- ✅ Trained Random Forest model (`outputs/random_forest_model.joblib`)
+- ✅ Trained Two-Tower network (`outputs/two_tower_model.pth`)
+- ✅ 804-dimensional feature vectors with weather + embeddings
+- ✅ Comprehensive final report (`reports/PHASE_6_FINAL_REPORT.md`)
+
+## Running the Project
+
+### All Phases Complete - Review Results
+See `PROJECT_COMPLETE.md` for final results and recommendations.
+
+View detailed analysis:
 
 ```bash
-cd notebooks/phase1_data_prep
+# View final results and analysis
+cat PROJECT_COMPLETE.md
+cat reports/PHASE_6_FINAL_REPORT.md
 
-# 1. Load and sample Yelp data (10%)
-jupyter notebook 01_data_loading.ipynb
+# Load and use the trained Random Forest model
+python3 << 'EOF'
+import joblib
+import numpy as np
 
-# 2. Filter to major cities
-jupyter notebook 02_destination_filtering.ipynb
+# Load trained Random Forest
+model = joblib.load('outputs/random_forest_model.joblib')
 
-# 3. Identify cross-city users
-jupyter notebook 03_cross_city_users.ipynb
+# Make predictions on new user-destination pairs
+# X should be 804-dimensional feature vectors
+predictions = model.predict(X_test)
+print(f"Predicted ratings: {predictions}")
+EOF
 
-# 4. Build user/destination features
-jupyter notebook 04_feature_engineering.ipynb
+```
 
-# 5. Set up evaluation
-jupyter notebook 05_evaluation_harness.ipynb
+## Quick Links
 
-# 6. Train baselines
-jupyter notebook 06_baselines.ipynb
+| Document | Purpose |
+|----------|---------|
+| **[PROJECT_COMPLETE.md](PROJECT_COMPLETE.md)** | Final project summary & recommendations |
+| **[STATUS.md](STATUS.md)** | Current project status & progress |
+| **[PHASES.md](PHASES.md)** | Original project plan & timeline |
+| **[reports/PHASE_6_FINAL_REPORT.md](reports/PHASE_6_FINAL_REPORT.md)** | Detailed final analysis & findings |
+
+## Model Usage
+
+```python
+import joblib
+import numpy as np
+
+# Load trained Random Forest
+model = joblib.load('outputs/random_forest_model.joblib')
+
+# Make predictions (804-dimensional feature vectors)
+predictions = model.predict(X_test)
+
+# Get feature importance
+importance = model.get_feature_importance(top_n=20)
+print(importance)
 ```
 
 ## Key Configuration (config.py)

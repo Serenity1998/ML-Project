@@ -27,3 +27,20 @@ data/processed/*.parquet
 models/*.pkl
 models/*.joblib
 models/*.pt
+outputs/*.joblib
+outputs/*.pth
+
+# Cached data (too large)
+data/cache/
+data/samples/
+
+# Generated reports (regeneratable)
+reports/*.txt
+reports/*.csv
+
+# Frontend dependencies
+frontend/node_modules/
+frontend/dist/
+
+# Backend database
+backend/app.db

@@ -1,0 +1,66 @@
+.metrics-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metrics-panel h3 {
+  margin-bottom: 1.5rem;
+  color: var(--gray-800);
+  font-size: 1.1rem;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 1.25rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-box {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid var(--warning);
+  padding: 1rem;
+  border-radius: 8px;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+.info-box p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.info-box strong {
+  color: #92400e;
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
