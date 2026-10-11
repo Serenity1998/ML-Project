@@ -99,6 +99,33 @@ We experimentally measure the contribution of weather and review embeddings by c
    - `yelp_academic_dataset_business.json`
    - `yelp_academic_dataset_review.json`
    - `yelp_academic_dataset_user.json`
+   - `yelp_academic_dataset_tip.json`
+
+## How to Reproduce
+
+Run everything from the project root with the virtual environment active.
+
+1. **Run the notebooks in phase order** (1 → 6). Each phase reads the previous phase's outputs from `data/cache/`:
+   ```bash
+   jupyter nbconvert --to notebook --execute --inplace notebooks/phase*/*.ipynb
+   ```
+   This trains `outputs/random_forest_model.joblib` and the two-tower model, writes the result tables to `reports/`, and regenerates the charts in `reports/figures/`. The Recall@10 table below comes from `notebooks/phase4_models/03_ranking_models.ipynb`.
+
+2. **Build the artifacts the web app serves** (city embeddings and city table for ~480 cities):
+   ```bash
+   python expand_dataset.py                  # writes data/cache/reviews_expanded.parquet
+   python scripts/expand_to_half_cities.py   # writes outputs/city_embeddings_expanded.joblib
+   python scripts/build_city_table.py        # writes data/cache/city_table_v2.parquet
+   ```
+
+3. **Run the app.** Copy `backend/.env.example` to `backend/.env` and fill in `ANTHROPIC_API_KEY` and `UNSPLASH_API_KEY`, then:
+   ```bash
+   pip install -r backend/requirements.txt
+   uvicorn backend.main:app --port 8000      # terminal 1
+   cd frontend && npm install && npm run dev # terminal 2, then open http://localhost:5173
+   ```
+
+The model files, caches and Yelp data are git-ignored, so a fresh clone has to run steps 1–2 before the app will start.
 
 ## Data
 

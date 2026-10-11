@@ -1,0 +1,77 @@
+{
+  "min_distance_km": 0,
+  "test_users": 1968,
+  "rf_depth": 15,
+  "results": {
+    "Random": {
+      "recall@10": 0.038,
+      "ndcg@10": 0.018,
+      "mrr@10": 0.013,
+      "num_queries": 1968.0
+    },
+    "Popularity": {
+      "recall@10": 0.358,
+      "ndcg@10": 0.18,
+      "mrr@10": 0.126,
+      "num_queries": 1968.0
+    },
+    "Random Forest \u00b7 Baseline": {
+      "recall@10": 0.732,
+      "ndcg@10": 0.544,
+      "mrr@10": 0.486,
+      "num_queries": 1968.0
+    },
+    "Random Forest \u00b7 +Weather": {
+      "recall@10": 0.722,
+      "ndcg@10": 0.54,
+      "mrr@10": 0.484,
+      "num_queries": 1968.0
+    },
+    "Random Forest \u00b7 +Embeddings": {
+      "recall@10": 0.723,
+      "ndcg@10": 0.543,
+      "mrr@10": 0.487,
+      "num_queries": 1968.0
+    },
+    "Random Forest \u00b7 Full": {
+      "recall@10": 0.726,
+      "ndcg@10": 0.54,
+      "mrr@10": 0.482,
+      "num_queries": 1968.0
+    },
+    "Two-Tower \u00b7 Baseline": {
+      "recall@10": 0.635,
+      "ndcg@10": 0.432,
+      "mrr@10": 0.369,
+      "num_queries": 1968.0
+    },
+    "Two-Tower \u00b7 +Weather": {
+      "recall@10": 0.633,
+      "ndcg@10": 0.448,
+      "mrr@10": 0.39,
+      "num_queries": 1968.0
+    },
+    "Two-Tower \u00b7 +Embeddings": {
+      "recall@10": 0.624,
+      "ndcg@10": 0.425,
+      "mrr@10": 0.363,
+      "num_queries": 1968.0
+    },
+    "Two-Tower \u00b7 Full": {
+      "recall@10": 0.631,
+      "ndcg@10": 0.437,
+      "mrr@10": 0.376,
+      "num_queries": 1968.0
+    }
+  },
+  "rf_full_importance": {
+    "distance_km": 0.34,
+    "city_log_reviews": 0.138,
+    "city_log_businesses": 0.109,
+    "temp_diff": 0.078,
+    "user_log_reviews": 0.034,
+    "home_lon": 0.033,
+    "text_similarity": 0.032,
+    "home_lat": 0.032
+  }
+}

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import json
 import uuid
 import time
 from collections import defaultdict, deque
@@ -22,7 +23,11 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
 from backend.db import init_db, save_session, get_session, log_feedback, get_metrics
-from backend.agent import chat_with_agent, explain_recommendations
+from backend.agent import (
+    chat_with_agent, explain_recommendations, fallback_agent_response,
+    extract_prefs_from_response, TravelPrefs, client as claude_client,
+)
+from backend.city_tools import city_details, resolve_home
 from backend.scorer import score_cities
 from backend.bandit import get_or_create_bandit
 from backend.image_service import fetch_photo_sync, get_weather_condition
@@ -53,7 +58,13 @@ METRO_REPEAT_PENALTY = 0.05
 # as a good fit for "popular" / "hidden gem"; states need STATE_MIN_RATIO.
 GOOD_MATCH_RATIO = 0.7
 STATE_MIN_RATIO = 0.6
+# "Best matches" penalty: strong enough that one metro's suburbs (Tampa has 57)
+# can't fill the row, weak enough not to pull in poor climate fits.
+BEST_METRO_PENALTY = 0.08
 SECTION_SIZES = {"best": 5, "popular": 4, "gems": 4, "states": 6}
+# With a home location, cities closer than this aren't a trip (the 'real trips'
+# experiment in scripts/ranking_by_trip_distance.py used 50 km)
+MIN_TRIP_KM = 150
 
 def diversify_by_metro(df, k, score_col="final_score", penalty=METRO_REPEAT_PENALTY):
     """Greedy top-k by score_col minus a penalty per earlier pick from the same metro."""
@@ -86,8 +97,7 @@ def build_sections(df):
         shown.update(picked.index)
         return picked
 
-    # Light penalty here: the other rows already add variety, so this row stays truly "best"
-    best = take(df, SECTION_SIZES["best"], penalty=0.02)
+    best = take(df, SECTION_SIZES["best"], penalty=BEST_METRO_PENALTY)
     # Popular: well-known places that still fit; strong metro penalty (popularity is 0-1)
     popular = take(good, SECTION_SIZES["popular"], "popularity", penalty=0.3)
     gems = take(good[small_town.loc[good.index]], SECTION_SIZES["gems"])
@@ -111,6 +121,11 @@ def reason_for(row, prefs):
         parts.append(f"strong {' & '.join(a.lower() for a in prefs.activities[:2])} scene")
     if row["budget_match"] >= 0.8:
         parts.append("fits your budget")
+    if "distance_km" in row and pd.notna(row["distance_km"]):
+        parts.append(f"{row['distance_km']:,.0f} km away")
+    diff = row.get("home_temp_diff", np.nan)
+    if pd.notna(diff) and abs(diff) >= 2:
+        parts.append(f"{abs(diff):.0f}°C {'warmer' if diff > 0 else 'cooler'} than home")
     parts.append(f"{int(row['num_businesses']):,} places on Yelp")
     return " · ".join(parts)
 
@@ -133,7 +148,12 @@ MAX_USER_TURNS = 20          # per session
 RATE_LIMIT_MESSAGES = 6      # per RATE_LIMIT_WINDOW_S seconds, per session
 RATE_LIMIT_WINDOW_S = 60
 _CHAT_HISTORY: dict[str, list[dict]] = defaultdict(list)
+_CHAT_TURNS: dict[str, int] = defaultdict(int)
 _CHAT_TIMES: dict[str, deque] = defaultdict(deque)
+
+# Keeping chat and form in sync
+_FORM_CHANGED: dict[str, dict] = {}             # form prefs submitted since the agent last heard
+_LAST_MATCH: dict[str, dict[str, float]] = {}  # city -> match score from the session's latest search
 
 def chat_limit_reply(session_id: str, message: str) -> str | None:
     """Canned reply if this message breaks a chat limit, else None."""
@@ -141,7 +161,7 @@ def chat_limit_reply(session_id: str, message: str) -> str | None:
         return "Tell me a bit about the trip you have in mind - for example, when you'd like to travel."
     if len(message) > MAX_MESSAGE_CHARS:
         return f"That message is a bit long - could you keep it under {MAX_MESSAGE_CHARS} characters?"
-    if sum(m["role"] == "user" for m in _CHAT_HISTORY[session_id]) >= MAX_USER_TURNS:
+    if _CHAT_TURNS[session_id] >= MAX_USER_TURNS:
         return "We've chatted a lot! Please use the form above to adjust your preferences."
     times = _CHAT_TIMES[session_id]
     now = time.monotonic()
@@ -157,17 +177,14 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
 
-class ChatResponse(BaseModel):
-    session_id: str
-    agent_reply: str
-    preferences_extracted: dict | None = None
-
 class UserPreferences(BaseModel):
     travel_month: int = 6
     climate_preference: str = "moderate"
     activities: list = []
     budget: str = "medium"
     free_text_interests: str = ""
+    exclude_states: list = []  # e.g. ["FL"]; set by the chat agent ("not Florida")
+    traveling_from: str = ""  # optional home city, e.g. "Edmonton" or "Chicago"
 
 class RecommendRequest(BaseModel):
     session_id: str
@@ -201,6 +218,14 @@ class RecommendResponse(BaseModel):
     session_id: str
     recommendations: list[CityRecommendation]  # all shown cities, flat (best matches first)
     sections: list[RecommendationSection] = []
+    # Resolved traveling_from: {"query", "label", "found", "nearby_excluded", "min_trip_km"}; empty if not given
+    home: dict = {}
+
+class ChatResponse(BaseModel):
+    session_id: str
+    agent_reply: str
+    preferences_extracted: dict | None = None  # prefs the agent searched with (syncs the form)
+    recommendations: RecommendResponse | None = None  # results of that search (updates the cards)
 
 class FeedbackRequest(BaseModel):
     session_id: str
@@ -217,45 +242,106 @@ async def health_check():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+def summarize_for_agent(recs: "RecommendResponse") -> dict:
+    """Compact view of search results for the agent (the page shows the full cards)."""
+    return {"sections": [
+        {"title": sec.title, "cities": [
+            {"city": r.city, "metro_area": r.metro, "match_pct": round(r.match_score * 100), "why": r.reason}
+            for r in sec.recommendations
+        ]}
+        for sec in recs.sections
+    ], "traveling_from": recs.home or None}
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     """
-    Chat with the conversational agent.
-    Agent gathers user preferences through natural conversation.
-    (Plain def: FastAPI runs it in a worker thread, so the blocking API call
-    doesn't stall other requests.)
+    Chat with the conversational agent. The agent can run the recommender,
+    look up city facts and compare cities through tools; any search it runs
+    is returned so the page can update its cards and form.
+    (Plain def: FastAPI runs it in a worker thread, so the blocking API calls
+    don't stall other requests.)
     """
-    # Get or create session
-    if not get_session(req.session_id):
-        save_session(req.session_id, None)
+    sid = req.session_id
+    if not get_session(sid):
+        save_session(sid, None)
 
     message = req.message.strip()
-    limit_reply = chat_limit_reply(req.session_id, message)
+    limit_reply = chat_limit_reply(sid, message)
     if limit_reply:
-        return ChatResponse(session_id=req.session_id, agent_reply=limit_reply)
+        return ChatResponse(session_id=sid, agent_reply=limit_reply)
+    _CHAT_TURNS[sid] += 1
+    history = _CHAT_HISTORY[sid]
 
-    history = _CHAT_HISTORY[req.session_id]
-    agent_reply, extracted_prefs = chat_with_agent(req.session_id, message, list(history))
-    history += [{"role": "user", "content": message}, {"role": "assistant", "content": agent_reply}]
+    if claude_client is None:
+        # No API key: rule-based fallback that only gathers preferences
+        reply = fallback_agent_response(message, history)
+        history += [{"role": "user", "content": message}, {"role": "assistant", "content": reply}]
+        prefs = extract_prefs_from_response(reply)
+        recs = build_recommendations(sid, UserPreferences(**prefs)) if prefs else None
+        return ChatResponse(session_id=sid, agent_reply=reply, preferences_extracted=prefs, recommendations=recs)
 
-    # If preferences were extracted, save them
-    if extracted_prefs:
-        save_session(req.session_id, extracted_prefs)
+    user_content = []
+    if sid in _FORM_CHANGED:
+        form = _FORM_CHANGED.pop(sid)
+        user_content.append({"type": "text", "text": (
+            "[App note] Since your last reply, the user changed the form and the page now shows new "
+            "results (below). No need to search again unless the user asks for changes. "
+            f"{json.dumps(form)}"
+        )})
+    user_content.append({"type": "text", "text": message})
 
+    turn = {"prefs": None, "recs": None}
+
+    def search(tool_input):
+        prefs = TravelPrefs(**tool_input).model_dump()
+        prefs["exclude_states"] = [st.strip().upper() for st in prefs["exclude_states"]]
+        recs = build_recommendations(sid, UserPreferences(**prefs))
+        turn["prefs"], turn["recs"] = prefs, recs
+        return summarize_for_agent(recs)
+
+    def details(tool_input):
+        return city_details(tool_input["city"], tool_input["travel_month"])
+
+    def compare(tool_input):
+        last = _LAST_MATCH.get(sid, {})
+        cities = []
+        for name in tool_input["cities"][:3]:
+            info = city_details(name, tool_input["travel_month"])
+            if info.get("city") in last:
+                info["match_pct_in_latest_search"] = round(last[info["city"]] * 100)
+            cities.append(info)
+        return {"cities": cities}
+
+    reply = chat_with_agent(sid, history, user_content, {
+        "search_destinations": search,
+        "get_city_details": details,
+        "compare_cities": compare,
+    })
     return ChatResponse(
-        session_id=req.session_id,
-        agent_reply=agent_reply,
-        preferences_extracted=extracted_prefs
+        session_id=sid,
+        agent_reply=reply,
+        preferences_extracted=turn["prefs"],
+        recommendations=turn["recs"],
     )
 
 @app.post("/recommend", response_model=RecommendResponse)
 def recommend(req: RecommendRequest):
+    """Recommendations for preferences submitted through the form."""
+    recs = build_recommendations(req.session_id, req.preferences)
+    # Tell the chat agent on the user's next message, including what the page now shows
+    _FORM_CHANGED[req.session_id] = {
+        "preferences": req.preferences.model_dump(),
+        "results_on_page": summarize_for_agent(recs),
+    }
+    return recs
+
+def build_recommendations(session_id: str, prefs: UserPreferences) -> RecommendResponse:
     """
     Get recommendations for the user based on their preferences.
-    Uses Random Forest + Contextual Bandit scoring.
+    Uses Random Forest + Contextual Bandit scoring. Shared by the form and the chat agent.
     """
-    session_id = req.session_id
-    prefs = req.preferences
+
+    home = resolve_home(prefs.traveling_from) if prefs.traveling_from.strip() else None
 
     # Score all cities using the Random Forest
     scores_df = score_cities({
@@ -263,8 +349,21 @@ def recommend(req: RecommendRequest):
         "climate_preference": prefs.climate_preference,
         "activities": prefs.activities,
         "budget": prefs.budget,
-        "free_text_interests": prefs.free_text_interests
+        "free_text_interests": prefs.free_text_interests,
+        "home": home,
     })
+
+    if prefs.exclude_states:
+        scores_df = scores_df[~scores_df["state"].isin(prefs.exclude_states)].reset_index(drop=True)
+
+    home_info = {}
+    if prefs.traveling_from.strip():
+        home_info = {"query": prefs.traveling_from.strip(), "found": home is not None,
+                     "label": home["label"] if home else "", "nearby_excluded": 0, "min_trip_km": MIN_TRIP_KM}
+    if home:
+        nearby = scores_df["distance_km"] < MIN_TRIP_KM
+        home_info["nearby_excluded"] = int(nearby.sum())
+        scores_df = scores_df[~nearby].reset_index(drop=True)
 
     # Apply contextual bandit re-ranking
     bandit = get_or_create_bandit()
@@ -345,12 +444,14 @@ def recommend(req: RecommendRequest):
     recommendations = [rec for sec in response_sections for rec in sec.recommendations]
 
     # Save session with preferences
-    save_session(session_id, prefs.dict())
+    save_session(session_id, prefs.model_dump())
+    _LAST_MATCH[session_id] = {r.city: r.match_score for r in recommendations}
 
     return RecommendResponse(
         session_id=session_id,
         recommendations=recommendations,
-        sections=response_sections
+        sections=response_sections,
+        home=home_info,
     )
 
 @app.post("/feedback")

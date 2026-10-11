@@ -163,9 +163,8 @@ def add_climate(cities):
 
 
 def add_training_stats(cities):
-    """Ratings/review counts the RF was trained on (from the training split)."""
-    businesses = pd.read_parquet(CACHE_DIR / "businesses_major_cities.parquet")[["business_id", "city"]]
-    reviews = pd.read_parquet(CACHE_DIR / "train_reviews.parquet").merge(businesses, on="business_id")
+    """Ratings/review counts the app's RF (random_forest_model_expanded) was trained on."""
+    reviews = pd.read_parquet(CACHE_DIR / "reviews_expanded.parquet", columns=["city", "stars"])
     reviews["city_name"] = reviews["city"].map(normalize_city)
     stats = reviews.groupby("city_name")["stars"].agg(["mean", "size"])
     cities["dest_avg_rating"] = cities["city_name"].map(stats["mean"]).fillna(cities["yelp_avg_stars"])
@@ -186,6 +185,17 @@ def add_embeddings(cities):
     return cities
 
 
+def apply_city_stats(cities, stats):
+    """Use the per-city rating, review count and embedding from train_rf_all_cities.py."""
+    cities["dest_avg_rating"] = stats["dest_avg_rating"].reindex(cities.index).fillna(cities["yelp_avg_stars"])
+    cities["dest_num_reviews"] = stats["dest_num_reviews"].reindex(cities.index).fillna(0).astype(int)
+    emb = stats["dest_embedding"].reindex(cities.index)
+    has = emb.map(lambda e: isinstance(e, (list, np.ndarray)))
+    cities["dest_embedding"] = [list(new) if ok else old for new, old, ok in zip(emb, cities["dest_embedding"], has)]
+    cities["has_embedding"] = cities["has_embedding"] | has
+    return cities
+
+
 def main():
     print("[1/5] Loading Yelp businesses...")
     b = load_businesses()
@@ -202,6 +212,9 @@ def main():
     print("[4/5] Adding RF training stats and embeddings...")
     cities = add_training_stats(cities)
     cities = add_embeddings(cities)
+    stats_path = CACHE_DIR / "city_training_stats_all.parquet"
+    if stats_path.exists():  # written by train_rf_all_cities.py
+        cities = apply_city_stats(cities, pd.read_parquet(stats_path))
     print(f"      {cities['has_embedding'].sum()} cities have their own embedding")
 
     print("[5/5] Saving...")

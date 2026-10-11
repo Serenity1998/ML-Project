@@ -49,3 +49,6 @@ frontend/.vite/
 
 # API keys
 .env
+
+# Logs
+*.log

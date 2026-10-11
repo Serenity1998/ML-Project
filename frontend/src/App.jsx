@@ -7,13 +7,22 @@ import MetricsPanel from './components/MetricsPanel'
 import { chat, getRecommendations, getMetrics, healthCheck } from './api'
 import './App.css'
 
+// Older backends return only the flat list; show it as a single section
+function toSections(response) {
+  return response.sections?.length
+    ? response.sections
+    : [{ key: 'top', title: '🏙️ Top Recommendations', description: '', recommendations: response.recommendations }]
+}
+
 function App() {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
   const [messages, setMessages] = useState([
-    { role: 'agent', text: 'Hi! I\'m your travel recommendation assistant. Where would you like to travel this year?' }
+    { role: 'agent', text: 'Hi! I\'m your travel assistant. Tell me when you want to go and what you enjoy, and I\'ll find destinations, compare them, and adjust them as we chat.' }
   ])
   const [preferences, setPreferences] = useState(null)
+  const [chatPrefs, setChatPrefs] = useState(null)  // prefs the assistant searched with; fills the form
   const [recommendations, setRecommendations] = useState(null)
+  const [homeInfo, setHomeInfo] = useState(null)  // how the backend resolved "Traveling from"
   const [loading, setLoading] = useState(false)
   const [metrics, setMetrics] = useState(null)
   const [apiHealth, setApiHealth] = useState(null)
@@ -43,13 +52,14 @@ function App() {
 
       setMessages(prev => [...prev, { role: 'agent', text: response.agent_reply }])
 
+      // The assistant ran a search: show its results and mirror its prefs in the form
+      if (response.recommendations) {
+        setRecommendations(toSections(response.recommendations))
+        setHomeInfo(response.recommendations.home)
+      }
       if (response.preferences_extracted) {
         setPreferences(response.preferences_extracted)
-
-        // Auto-generate recommendations when prefs are extracted
-        setTimeout(() => {
-          handleGenerateRecommendations(response.preferences_extracted)
-        }, 500)
+        setChatPrefs(response.preferences_extracted)
       }
     } catch (error) {
       console.error('Chat error:', error)
@@ -63,12 +73,8 @@ function App() {
     setLoading(true)
     try {
       const response = await getRecommendations(sessionId, prefs)
-      // Older backends return only the flat list; show it as a single section
-      setRecommendations(
-        response.sections?.length
-          ? response.sections
-          : [{ key: 'top', title: '🏙️ Top Recommendations', description: '', recommendations: response.recommendations }]
-      )
+      setRecommendations(toSections(response))
+      setHomeInfo(response.home)
       setPreferences(prefs)
     } catch (error) {
       console.error('Recommendation error:', error)
@@ -91,7 +97,7 @@ function App() {
 
       <div className="main-content">
         {/* Form Section */}
-        <PreferenceForm onSubmit={handleFormSubmit} loading={loading} />
+        <PreferenceForm onSubmit={handleFormSubmit} loading={loading} syncedPrefs={chatPrefs} homeInfo={homeInfo} />
 
         {/* Recommendations Section */}
         {recommendations && recommendations.map(section => (

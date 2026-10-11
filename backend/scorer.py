@@ -35,6 +35,10 @@ ACTIVITY_CATEGORIES = {
 # Budget -> target position on the cheapest(0)..priciest(1) city scale.
 BUDGET_TARGETS = {"low": 0.0, "medium": 0.5, "high": 1.0}
 
+# Training reviews at which a city's RF prediction counts half (Bayesian-style
+# shrinkage toward the median city).
+RF_CONFIDENCE_REVIEWS = 50
+
 # Global state
 _MODEL = None
 _EMBEDDING_MODEL = None
@@ -46,7 +50,10 @@ def load_model():
     global _MODEL, _EMBEDDING_MODEL, _CITY_TABLE
 
     if _MODEL is None:
-        _MODEL = joblib.load(OUTPUT_DIR / "random_forest_model.joblib")
+        # Trained on all ~476 cities by scripts/train_rf_all_cities.py; the
+        # 39-city expanded model is the fallback until that has been run.
+        all_cities = OUTPUT_DIR / "random_forest_model_all_cities.joblib"
+        _MODEL = joblib.load(all_cities if all_cities.exists() else OUTPUT_DIR / "random_forest_model_expanded.joblib")
         _EMBEDDING_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
 
         # Load city table
@@ -119,6 +126,8 @@ def score_cities(user_prefs):
             - activities: list of str (e.g., ["hiking", "museums"])
             - budget: str (e.g., "low", "medium", "high")
             - free_text_interests: str (free text about interests)
+            - home: optional dict from city_tools.resolve_home ({"lat", "lon", "temps"});
+              adds distance_km and home_temp_diff columns
 
     Returns:
         DataFrame with columns [city, rf_score, climate_match, activity_sim, budget_match, popularity, combined_score, ...]
@@ -131,11 +140,12 @@ def score_cities(user_prefs):
     interests_text = user_prefs.get("free_text_interests", "")
     combined_text = f"{activities_text} {interests_text}"
 
-    # Build pseudo-user features
+    # Pseudo-user features: a cold-start user with no review history, encoded
+    # the same way train_rf_all_cities.py encodes reviewers without history
     user_avg_rating = 3.5
     user_rating_std = 1.0
-    user_num_reviews = 1
-    user_num_cities = 1
+    user_num_reviews = 0
+    user_num_cities = 0
     user_embedding = compute_user_embedding(combined_text)
 
     # Climate match: smooth falloff from the ideal temperature for the month
@@ -207,10 +217,14 @@ def score_cities(user_prefs):
     budget_target = BUDGET_TARGETS.get(str(user_prefs.get("budget", "medium")).lower(), 0.5)
     results_df["budget_match"] = 1.0 - np.abs(price_pos - budget_target)
 
-    # Normalize scores for combination
-    results_df["rf_score_norm"] = (results_df["rf_score"] - results_df["rf_score"].min()) / (
-        results_df["rf_score"].max() - results_df["rf_score"].min() + 1e-8
-    )
+    # Normalize, then shrink each city's RF score toward the median by how many
+    # training reviews back it up. The RF only saw a few dozen cities; for the
+    # rest its prediction is extrapolation (cities with no text embedding all get
+    # the same score), and the handful it did see would otherwise always win.
+    rf_norm = _minmax(results_df["rf_score"])
+    n_reviews = col("dest_num_reviews", 0).astype(float)
+    confidence = n_reviews / (n_reviews + RF_CONFIDENCE_REVIEWS)
+    results_df["rf_score_norm"] = np.median(rf_norm) + (rf_norm - np.median(rf_norm)) * confidence
 
     # Combined score: the user's stated preferences drive the ranking; the RF
     # rating prediction and popularity only break ties between similar fits.
@@ -221,6 +235,17 @@ def score_cities(user_prefs):
         0.15 * results_df["rf_score_norm"] +
         0.10 * results_df["popularity"]
     )
+
+    # Where the user travels from (optional): distance and travel-month temperature vs home,
+    # used by the app to drop nearby cities and to explain cards, not to reorder them
+    home = user_prefs.get("home")
+    if home:
+        lat1, lon1 = np.radians(home["lat"]), np.radians(home["lon"])
+        lat2, lon2 = np.radians(col("dest_lat", 0).astype(float)), np.radians(col("dest_lon", 0).astype(float))
+        a = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+        results_df["distance_km"] = 6371 * 2 * np.arcsin(np.sqrt(a))
+        if home.get("temps"):
+            results_df["home_temp_diff"] = results_df["dest_temp"] - home["temps"][travel_month]
 
     results_df = results_df.sort_values("combined_score", ascending=False).reset_index(drop=True)
     return results_df

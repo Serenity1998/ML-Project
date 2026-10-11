@@ -8,19 +8,24 @@ from src.data.labels import (
     assign_target_cities,
     split_history,
     build_training_labels,
+    far_cities_by_user,
 )
 
 
 class RecommendationHarness:
     """Evaluation framework for destination recommendations."""
 
-    def __init__(self, reviews_df, businesses_df, test_size=0.2, random_state=42, n_negatives=4, val_size=0.0):
+    def __init__(self, reviews_df, businesses_df, test_size=0.2, random_state=42, n_negatives=4, val_size=0.0,
+                 min_distance_km=0):
         self.reviews = reviews_df
         self.businesses = businesses_df
         self.test_size = test_size
         self.val_size = val_size
         self.random_state = random_state
         self.n_negatives = n_negatives
+        # > 0: held-out, negative and candidate cities must be at least this far from the user's home city
+        self.min_distance_km = min_distance_km
+        self.far_cities = None
         self.user_city = None
         self.targets = None
         self.train_users = None
@@ -37,7 +42,11 @@ class RecommendationHarness:
         Returned reviews are history only: each user's target-city reviews are removed.
         """
         self.user_city = build_user_city_table(self.reviews, self.businesses)
-        self.targets = assign_target_cities(self.user_city, self.random_state)
+        if self.min_distance_km:
+            city_coords = self.businesses.groupby('city')[['latitude', 'longitude']].median()
+            city_coords.columns = ['lat', 'lon']
+            self.far_cities = far_cities_by_user(self.user_city, city_coords, self.min_distance_km)
+        self.targets = assign_target_cities(self.user_city, self.random_state, self.far_cities)
         history = split_history(self.reviews, self.businesses, self.targets)
 
         users = sorted(self.targets['user_id'])
@@ -68,7 +77,8 @@ class RecommendationHarness:
             all_cities,
             train_targets,
             self.n_negatives,
-            self.random_state
+            self.random_state,
+            self.far_cities
         )
 
     def get_test_pairs(self):
@@ -89,7 +99,8 @@ class RecommendationHarness:
         if self._visited is None:
             self._visited = self.user_city.groupby('user_id')['city'].apply(set).to_dict()
         history_cities = self._visited[user_id] - {held_out_city}
-        return [city for city in all_cities if city not in history_cities]
+        return [city for city in all_cities if city not in history_cities
+                and (self.far_cities is None or city in self.far_cities[user_id])]
 
     def evaluate_ranking(self, rankings, held_out_city, k=10):
         """

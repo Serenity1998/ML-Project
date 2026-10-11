@@ -97,10 +97,10 @@ def load_city_table_v2():
     print(f"[+] Loaded city table v2 ({len(cities)} cities, {cities['metro'].nunique()} metros)")
     return cities
 
-def smoothed_category_share(counts, n_city, smoothing=20):
+def smoothed_category_share(counts, n_city, smoothing=50):
     """
     Share of each city's businesses in each category, shrunk toward the global
-    share so 1 matching business out of 15 doesn't dominate.
+    share so a few matching businesses in a 25-business town don't dominate.
     """
     global_share = counts.sum() / n_city.sum()
     return (counts + smoothing * global_share).div(n_city + smoothing, axis=0)

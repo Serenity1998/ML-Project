@@ -33,7 +33,8 @@
 
 .form-group select,
 .form-group textarea,
-.form-group input[type="date"] {
+.form-group input[type="date"],
+.form-group input[type="text"] {
   padding: 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: 8px;
@@ -44,7 +45,8 @@
 
 .form-group select:focus,
 .form-group textarea:focus,
-.form-group input[type="date"]:focus {
+.form-group input[type="date"]:focus,
+.form-group input[type="text"]:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
@@ -52,7 +54,8 @@
 
 .form-group select:disabled,
 .form-group textarea:disabled,
-.form-group input[type="date"]:disabled {
+.form-group input[type="date"]:disabled,
+.form-group input[type="text"]:disabled {
   background: var(--gray-100);
   cursor: not-allowed;
 }
@@ -136,4 +139,40 @@
   .activities-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
+}
+
+.synced-note {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.9rem;
+}
+
+.excluded-states {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.excluded-states button {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+
+.home-note {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #3730a3;
+}
+
+.home-note-missing {
+  color: #9a3412;
 }
