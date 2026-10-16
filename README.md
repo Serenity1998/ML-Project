@@ -125,7 +125,7 @@ Run everything from the project root with the virtual environment active.
    cd frontend && npm install && npm run dev # terminal 2, then open http://localhost:5173
    ```
 
-The model files, caches and Yelp data are git-ignored, so a fresh clone has to run steps 1–2 before the app will start.
+The model files, caches, and Yelp data are git-ignored, so a fresh clone has to run steps 1–2 before the app will start.
 
 ## Data
 
@@ -391,7 +391,7 @@ POST /feedback
 ```
 
 ### API Documentation
-Run backend and visit: http://localhost:8000/docs
+Run the backend and visit: http://localhost:8000/docs
 
 ## Frontend Setup
 
